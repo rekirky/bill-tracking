@@ -13,6 +13,7 @@ export default function BillsByMonth() {
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(null)
   const [selected, setSelected] = useState(null)
+  const [filter, setFilter] = useState('all') // 'all' | 'paid' | 'unpaid'
 
   const load = useCallback(() => {
     setLoading(true)
@@ -50,9 +51,18 @@ export default function BillsByMonth() {
     load()
   }
 
-  const bills = data?.bills ?? []
-  const totalPct = data?.total_amount > 0
-    ? Math.min((data.total_aside / data.total_amount) * 100, 100) : 0
+  const allBills = data?.bills ?? []
+  const bills = filter === 'paid'
+    ? allBills.filter(b => b.is_paid)
+    : filter === 'unpaid'
+      ? allBills.filter(b => !b.is_paid)
+      : allBills
+  const unpaidBills = allBills.filter(b => !b.is_paid)
+  const unpaidAmount = unpaidBills.reduce((s, b) => s + b.estimated_amount, 0)
+  const unpaidAside = unpaidBills.reduce((s, b) => s + b.total_aside, 0)
+  const unpaidOutstanding = unpaidBills.reduce((s, b) => s + b.outstanding, 0)
+  const totalPct = unpaidAmount > 0
+    ? Math.min((unpaidAside / unpaidAmount) * 100, 100) : 0
 
   return (
     <div className="page">
@@ -62,7 +72,14 @@ export default function BillsByMonth() {
           <span className="month-label">{MONTHS[month - 1]} {year}</span>
           <button onClick={nextMonth}>›</button>
         </div>
-        <button className="btn btn-primary" onClick={() => setModal('add')}>+ Add Bill</button>
+        <div className="flex gap-8">
+          <div className="btn-group">
+            <button className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilter('all')}>All</button>
+            <button className={`btn btn-sm ${filter === 'unpaid' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilter('unpaid')}>Unpaid</button>
+            <button className={`btn btn-sm ${filter === 'paid' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilter('paid')}>Paid</button>
+          </div>
+          <button className="btn btn-primary" onClick={() => setModal('add')}>+ Add Bill</button>
+        </div>
       </div>
 
       {/* Month summary strip */}
@@ -70,20 +87,20 @@ export default function BillsByMonth() {
         <div className="stat-grid" style={{ marginBottom: 24 }}>
           <div className="stat-card">
             <div className="stat-label">Bills this month</div>
-            <div className="stat-value">{bills.length}</div>
+            <div className="stat-value">{allBills.length}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Total amount</div>
-            <div className="stat-value">{fmt(data.total_amount)}</div>
+            <div className="stat-value">{fmt(unpaidAmount)}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Put aside</div>
-            <div className="stat-value green">{fmt(data.total_aside)}</div>
+            <div className="stat-value green">{fmt(unpaidAside)}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Outstanding</div>
-            <div className={`stat-value ${data.total_outstanding > 0 ? 'amber' : 'green'}`}>
-              {fmt(data.total_outstanding)}
+            <div className={`stat-value ${unpaidOutstanding > 0 ? 'amber' : 'green'}`}>
+              {fmt(unpaidOutstanding)}
             </div>
           </div>
         </div>
@@ -107,7 +124,7 @@ export default function BillsByMonth() {
         {loading
           ? <div className="empty-state"><p>Loading…</p></div>
           : bills.length === 0
-            ? <div className="empty-state"><p>No bills for {MONTHS[month - 1]} {year}.</p></div>
+            ? <div className="empty-state"><p>No {filter !== 'all' ? filter : ''} bills for {MONTHS[month - 1]} {year}.</p></div>
             : (
               <div className="table-wrap">
                 <table>
@@ -139,18 +156,23 @@ export default function BillsByMonth() {
                           <td><span className="badge badge-muted">{FREQ_LABELS[bill.frequency]}</span></td>
                           <td className="mono">{fmt(bill.estimated_amount)}</td>
                           <td className="mono text-green">{fmt(bill.total_aside)}</td>
-                          <td className={`mono ${bill.outstanding > 0 ? 'text-amber' : 'text-green'}`}>
-                            {bill.outstanding > 0 ? fmt(bill.outstanding) : '✓ Covered'}
+                          <td className={`mono ${bill.is_paid ? 'text-muted' : bill.outstanding > 0 ? 'text-amber' : 'text-green'}`}>
+                            {bill.is_paid ? '—' : bill.outstanding > 0 ? fmt(bill.outstanding) : '✓ Covered'}
                           </td>
                           <td style={{ minWidth: 120 }}>
-                            <div className="progress-wrap">
-                              <div className="progress-bar">
-                                <div className={`progress-fill ${cls}`} style={{ width: `${pct}%` }} />
-                              </div>
-                              <span className="mono" style={{ fontSize: 11, color: 'var(--text2)', minWidth: 34 }}>
-                                {Math.round(pct)}%
-                              </span>
-                            </div>
+                            {bill.is_paid
+                              ? <span className="badge badge-paid">Paid</span>
+                              : (
+                                <div className="progress-wrap">
+                                  <div className="progress-bar">
+                                    <div className={`progress-fill ${cls}`} style={{ width: `${pct}%` }} />
+                                  </div>
+                                  <span className="mono" style={{ fontSize: 11, color: 'var(--text2)', minWidth: 34 }}>
+                                    {Math.round(pct)}%
+                                  </span>
+                                </div>
+                              )
+                            }
                           </td>
                           <td>
                             <div className="flex gap-8">

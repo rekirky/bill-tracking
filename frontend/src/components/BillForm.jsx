@@ -5,7 +5,7 @@ import { getAccounts } from '../api.js'
 
 const EMPTY = {
   name: '', estimated_amount: '', due_date: '', payment_type: '',
-  account_id: '', frequency: 'monthly', anchor_date: '',
+  account_id: '', frequency: 'monthly',
 }
 
 export default function BillForm({ initial, onSave, onClose }) {
@@ -33,7 +33,6 @@ export default function BillForm({ initial, onSave, onClose }) {
         ...form,
         estimated_amount: parseFloat(form.estimated_amount),
         account_id: parseInt(form.account_id),
-        anchor_date: form.anchor_date || form.due_date || null,
       })
     } catch (err) {
       setError(err.message)
@@ -87,20 +86,14 @@ export default function BillForm({ initial, onSave, onClose }) {
           </div>
         </div>
 
-        <div className="form-grid form-grid-2">
-          <div className="field">
-            <label>Account *</label>
-            <select value={form.account_id} onChange={set('account_id')}>
-              <option value="">Select account…</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label>Anchor date</label>
-            <input type="date" value={form.anchor_date} onChange={set('anchor_date')} />
-          </div>
+        <div className="field">
+          <label>Account *</label>
+          <select value={form.account_id} onChange={set('account_id')}>
+            <option value="">Select account…</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
         </div>
 
         {error && <p className="error-msg">{error}</p>}

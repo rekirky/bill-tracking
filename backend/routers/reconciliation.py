@@ -6,6 +6,17 @@ import models, schemas
 router = APIRouter(prefix="/reconciliations", tags=["reconciliations"])
 
 
+@router.get("/live-total")
+def live_total(account_id: int, db: Session = Depends(get_db)):
+    total = sum(
+        m.amount
+        for m in db.query(models.MoneyAside)
+        .filter(models.MoneyAside.account_id == account_id)
+        .all()
+    )
+    return {"account_id": account_id, "system_total": total}
+
+
 @router.get("/", response_model=list[schemas.Reconciliation])
 def list_reconciliations(account_id: int | None = None, db: Session = Depends(get_db)):
     q = db.query(models.Reconciliation)

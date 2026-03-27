@@ -1,7 +1,7 @@
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract
+from sqlalchemy import extract
 from database import get_db
 import models, schemas
 
@@ -9,12 +9,13 @@ router = APIRouter(prefix="/bills", tags=["bills"])
 
 
 def _enrich(bill: models.Bill) -> schemas.Bill:
-    """Attach computed total_aside and outstanding to a bill."""
+    """Attach computed total_aside, outstanding, and is_paid to a bill."""
     total_aside = sum(m.amount for m in bill.money_aside)
     outstanding = max(bill.estimated_amount - total_aside, 0)
     data = schemas.Bill.model_validate(bill)
     data.total_aside = total_aside
     data.outstanding = outstanding
+    data.is_paid = len(bill.payments) > 0
     return data
 
 
@@ -73,14 +74,16 @@ def dashboard(db: Session = Depends(get_db)):
     unpaid_this_month = [b for b in this_month if b.outstanding > 0]
 
     upcoming = sorted(
-        [b for b in enriched if b.due_date >= today],
+        [b for b in enriched if b.due_date >= today and not b.is_paid],
         key=lambda b: b.due_date,
     )[:10]
 
+    unpaid = [b for b in enriched if not b.is_paid]
+
     return schemas.DashboardSummary(
-        total_outstanding=sum(b.outstanding for b in enriched),
-        total_money_aside=sum(b.total_aside for b in enriched),
-        difference=sum(b.total_aside for b in enriched) - sum(b.outstanding for b in enriched),
+        total_outstanding=sum(b.outstanding for b in unpaid),
+        total_money_aside=sum(b.total_aside for b in unpaid),
+        difference=sum(b.total_aside for b in unpaid) - sum(b.outstanding for b in unpaid),
         bills_this_month=len(this_month),
         bills_unpaid_this_month=len(unpaid_this_month),
         upcoming_bills=upcoming,
@@ -94,6 +97,8 @@ def create_bill(payload: schemas.BillCreate, db: Session = Depends(get_db)):
         data["anchor_date"] = data["due_date"]
     bill = models.Bill(**data)
     db.add(bill)
+    db.flush()  # get bill.id before commit
+    bill.series_id = bill.id  # root of its own series
     db.commit()
     db.refresh(bill)
     return _enrich(bill)

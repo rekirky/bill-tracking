@@ -55,6 +55,7 @@ class Bill(BillBase):
     created_at: datetime
     total_aside: float = 0.0
     outstanding: float = 0.0
+    is_paid: bool = False
     class Config:
         from_attributes = True
 

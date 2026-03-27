@@ -25,6 +25,7 @@ class Account(Base):
     is_primary_bills_account = Column(Boolean, default=False)
     current_balance = Column(Float, default=0.0)
 
+
     bills = relationship("Bill", back_populates="account")
     money_aside_entries = relationship("MoneyAside", back_populates="account")
     reconciliations = relationship("Reconciliation", back_populates="account")
@@ -41,6 +42,7 @@ class Bill(Base):
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
     frequency = Column(SAEnum(Frequency), nullable=False, default=Frequency.monthly)
     anchor_date = Column(Date, nullable=True)
+    series_id = Column(Integer, nullable=True, index=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

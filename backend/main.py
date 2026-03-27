@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from database import engine, Base
 import models  # noqa: F401 — ensures all models are registered before create_all
 
@@ -7,6 +8,13 @@ from routers import accounts, bills, payments, money_aside, reconciliation
 
 # Create all tables on startup
 Base.metadata.create_all(bind=engine)
+
+# Migrate: add series_id column if it doesn't exist (SQLite-safe)
+with engine.connect() as conn:
+    cols = [row[1] for row in conn.execute(text("PRAGMA table_info(bills)"))]
+    if "series_id" not in cols:
+        conn.execute(text("ALTER TABLE bills ADD COLUMN series_id INTEGER"))
+        conn.commit()
 
 app = FastAPI(title="BillTracker API", version="1.0.0")
 

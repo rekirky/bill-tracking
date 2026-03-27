@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { getAccounts, getReconciliations, createReconciliation } from '../api.js'
+import { useState, useEffect, useCallback } from 'react'
+import { getAccounts, getReconciliations, getLiveTotal, createReconciliation } from '../api.js'
 import { fmt } from '../utils.js'
 import Modal from '../components/Modal.jsx'
 
@@ -7,6 +7,7 @@ export default function Reconcile() {
   const [accounts, setAccounts] = useState([])
   const [accountId, setAccountId] = useState('')
   const [history, setHistory] = useState([])
+  const [liveTotal, setLiveTotal] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState({ bank_balance: '', notes: '' })
   const [error, setError] = useState('')
@@ -20,10 +21,22 @@ export default function Reconcile() {
     })
   }, [])
 
+  const refreshLive = useCallback(() => {
+    if (!accountId) return
+    getLiveTotal(accountId).then((r) => setLiveTotal(r.system_total))
+  }, [accountId])
+
   useEffect(() => {
     if (!accountId) return
     getReconciliations(accountId).then(setHistory)
-  }, [accountId])
+    refreshLive()
+  }, [accountId, refreshLive])
+
+  // Refresh live total whenever the user returns to this tab
+  useEffect(() => {
+    window.addEventListener('focus', refreshLive)
+    return () => window.removeEventListener('focus', refreshLive)
+  }, [refreshLive])
 
   async function submit() {
     if (!form.bank_balance) { setError('Bank balance is required.'); return }
@@ -37,6 +50,7 @@ export default function Reconcile() {
       setShowModal(false)
       setForm({ bank_balance: '', notes: '' })
       getReconciliations(accountId).then(setHistory)
+      refreshLive()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -45,6 +59,8 @@ export default function Reconcile() {
   }
 
   const latest = history[0]
+  const liveSystemTotal = liveTotal ?? latest?.system_total ?? 0
+  const liveDifference = latest ? latest.bank_balance - liveSystemTotal : 0
 
   return (
     <div className="page">
@@ -75,22 +91,22 @@ export default function Reconcile() {
             </div>
             <div className="stat-card">
               <div className="stat-label">System total (aside)</div>
-              <div className="stat-value">{fmt(latest.system_total)}</div>
+              <div className="stat-value">{fmt(liveSystemTotal)}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Difference</div>
-              <div className={`stat-value ${Math.abs(latest.difference) < 0.01 ? 'green' : latest.difference > 0 ? 'amber' : 'red'}`}>
-                {fmt(latest.difference)}
+              <div className={`stat-value ${Math.abs(liveDifference) < 0.01 ? 'green' : liveDifference > 0 ? 'amber' : 'red'}`}>
+                {fmt(liveDifference)}
               </div>
             </div>
           </div>
-          {Math.abs(latest.difference) < 0.01 && (
+          {Math.abs(liveDifference) < 0.01 && (
             <p className="text-green mt-16" style={{ fontSize: 13 }}>✓ Balanced — your bank account matches your records.</p>
           )}
-          {latest.difference > 0.01 && (
+          {liveDifference > 0.01 && (
             <p className="text-amber mt-16" style={{ fontSize: 13 }}>↑ Your bank has more than recorded — you may have untracked deposits.</p>
           )}
-          {latest.difference < -0.01 && (
+          {liveDifference < -0.01 && (
             <p className="text-red mt-16" style={{ fontSize: 13 }}>↓ Your bank has less than recorded — check for missing money aside entries.</p>
           )}
           {latest.notes && <p className="text-muted mt-8" style={{ fontSize: 12 }}>Note: {latest.notes}</p>}

@@ -47,4 +47,6 @@ export const deleteMoneyAside = (id) => request('DELETE', `/money-aside/${id}`)
 // Reconciliation
 export const getReconciliations = (accountId) =>
   request('GET', `/reconciliations/${accountId ? '?account_id=' + accountId : ''}`)
+export const getLiveTotal = (accountId) =>
+  request('GET', `/reconciliations/live-total?account_id=${accountId}`)
 export const createReconciliation = (data) => request('POST', '/reconciliations/', data)
