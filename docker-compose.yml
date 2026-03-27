@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: ./backend
+    container_name: billtracker-api
+    restart: unless-stopped
+    volumes:
+      - db_data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:////app/data/billtracker.db
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: billtracker-ui
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
