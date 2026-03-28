@@ -79,7 +79,6 @@ export default function SpendChart() {
   if (!chartData) return null
 
   const data = buildChartData(chartData.previous, chartData.current)
-
   return (
     <div className="card" style={{ marginBottom: 32 }}>
       <h3 style={{ marginBottom: 20 }}>Monthly spend</h3>

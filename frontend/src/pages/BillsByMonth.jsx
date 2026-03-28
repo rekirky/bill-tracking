@@ -1,6 +1,27 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getBillsByMonth, createBill, updateBill, deleteBill } from '../api.js'
 import { fmt, fmtDate, progressClass, MONTHS, FREQ_LABELS } from '../utils.js'
+
+function exportCSV(bills, label) {
+  const headers = ['Bill', 'Payment Type', 'Due Date', 'Frequency', 'Amount', 'Aside', 'Outstanding', 'Status']
+  const rows = bills.map(b => [
+    b.name,
+    b.payment_type,
+    fmtDate(b.due_date),
+    FREQ_LABELS[b.frequency],
+    b.estimated_amount.toFixed(2),
+    b.total_aside.toFixed(2),
+    b.outstanding.toFixed(2),
+    b.is_paid ? 'Paid' : 'Unpaid',
+  ])
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `bills-${label}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 import BillForm from '../components/BillForm.jsx'
 import MoneyAsideForm from '../components/MoneyAsideForm.jsx'
 import PaymentForm from '../components/PaymentForm.jsx'
@@ -78,6 +99,7 @@ export default function BillsByMonth() {
             <button className={`btn btn-sm ${filter === 'unpaid' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilter('unpaid')}>Unpaid</button>
             <button className={`btn btn-sm ${filter === 'paid' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilter('paid')}>Paid</button>
           </div>
+          <button className="btn btn-ghost" onClick={() => exportCSV(bills, `${MONTHS[month - 1]}-${year}${filter !== 'all' ? '-' + filter : ''}`)}>↓ Export</button>
           <button className="btn btn-primary" onClick={() => setModal('add')}>+ Add Bill</button>
         </div>
       </div>
