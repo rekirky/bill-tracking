@@ -390,5 +390,8 @@ select option { background: var(--bg2); }
 
   .stat-grid { grid-template-columns: 1fr 1fr; }
 
+  .stat-value { font-size: 20px; }
+  .stat-label { font-size: 10px; }
+
   .modal { padding: 20px; }
 }
