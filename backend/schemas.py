@@ -128,6 +128,21 @@ class DashboardSummary(BaseModel):
     upcoming_bills: list[Bill]
 
 
+# ── Spend Chart ───────────────────────────────────────────
+
+class SpendPoint(BaseModel):
+    day: int
+    bill: str
+    amount: float
+    cumulative: float
+
+class SpendChartData(BaseModel):
+    previous_month: str
+    current_month: str
+    previous: list[SpendPoint]
+    current: list[SpendPoint]
+
+
 # ── Monthly Summary ───────────────────────────────────────
 
 class MonthSummary(BaseModel):

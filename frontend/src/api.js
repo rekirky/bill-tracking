@@ -28,6 +28,7 @@ export const getBills = (params = {}) => {
 export const getBillsByMonth = (year, month) =>
   request('GET', `/bills/by-month?year=${year}&month=${month}`)
 export const getDashboard = () => request('GET', '/bills/dashboard')
+export const getSpendChart = () => request('GET', '/bills/spend-chart')
 export const createBill = (data) => request('POST', '/bills/', data)
 export const updateBill = (id, data) => request('PATCH', `/bills/${id}`, data)
 export const deleteBill = (id) => request('DELETE', `/bills/${id}`)

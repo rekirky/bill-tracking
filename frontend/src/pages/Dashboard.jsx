@@ -4,6 +4,7 @@ import { fmtDate, fmt, progressClass, FREQ_LABELS } from '../utils.js'
 import BillForm from '../components/BillForm.jsx'
 import MoneyAsideForm from '../components/MoneyAsideForm.jsx'
 import PaymentForm from '../components/PaymentForm.jsx'
+import SpendChart from '../components/SpendChart.jsx'
 
 export default function Dashboard() {
   const [data, setData] = useState(null)
@@ -48,6 +49,8 @@ export default function Dashboard() {
         </div>
         <button className="btn btn-primary" onClick={() => setModal('add')}>+ Add Bill</button>
       </div>
+
+      <SpendChart />
 
       {/* Upcoming bills table */}
       <div className="card" style={{ padding: 0 }}>
