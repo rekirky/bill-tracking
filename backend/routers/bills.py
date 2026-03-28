@@ -71,7 +71,7 @@ def dashboard(db: Session = Depends(get_db)):
         b for b in enriched
         if b.due_date.year == today.year and b.due_date.month == today.month
     ]
-    unpaid_this_month = [b for b in this_month if b.outstanding > 0]
+    unpaid_this_month = [b for b in this_month if not b.is_paid]
 
     upcoming = sorted(
         [b for b in enriched if b.due_date >= today and not b.is_paid],

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getDashboard, createBill, updateBill, deleteBill } from '../api.js'
-import { fmt, fmtDate, progressClass, FREQ_LABELS } from '../utils.js'
+import { fmtDate, fmt, progressClass, FREQ_LABELS } from '../utils.js'
 import BillForm from '../components/BillForm.jsx'
 import MoneyAsideForm from '../components/MoneyAsideForm.jsx'
 import PaymentForm from '../components/PaymentForm.jsx'
@@ -39,8 +39,6 @@ export default function Dashboard() {
 
   if (loading && !data) return <div className="page"><p className="text-muted">Loading…</p></div>
 
-  const diff = data?.difference ?? 0
-
   return (
     <div className="page">
       <div className="page-header">
@@ -49,26 +47,6 @@ export default function Dashboard() {
           <p className="text-muted mt-8">Overview of all active bills</p>
         </div>
         <button className="btn btn-primary" onClick={() => setModal('add')}>+ Add Bill</button>
-      </div>
-
-      {/* Stat cards */}
-      <div className="stat-grid">
-        <div className="stat-card">
-          <div className="stat-label">Total outstanding</div>
-          <div className="stat-value red">{fmt(data?.total_outstanding)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Money put aside</div>
-          <div className="stat-value green">{fmt(data?.total_money_aside)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Balance</div>
-          <div className={`stat-value ${diff >= 0 ? 'green' : 'red'}`}>{fmt(diff)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Unpaid bills this month</div>
-          <div className="stat-value">{data?.bills_unpaid_this_month ?? 0}</div>
-        </div>
       </div>
 
       {/* Upcoming bills table */}
