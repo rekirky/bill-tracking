@@ -1,6 +1,6 @@
 services:
   backend:
-    build: ./backend
+    image: ghcr.io/rekirky/bill-tracking-backend:latest
     container_name: billtracker-api
     restart: unless-stopped
     volumes:
@@ -8,13 +8,21 @@ services:
     environment:
       - DATABASE_URL=sqlite:////app/data/billtracker.db
     ports:
-      - "8007:8000"
+      - "5008:8000"
 
   frontend:
-    build: ./frontend
+    image: ghcr.io/rekirky/bill-tracking-frontend:latest
     container_name: billtracker-ui
     restart: unless-stopped
     ports:
       - "5007:80"
     depends_on:
       - backend
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: billtracker-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup billtracker-api billtracker-ui
