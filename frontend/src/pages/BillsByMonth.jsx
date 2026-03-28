@@ -86,8 +86,8 @@ export default function BillsByMonth() {
       {data && (
         <div className="stat-grid" style={{ marginBottom: 24 }}>
           <div className="stat-card">
-            <div className="stat-label">Bills this month</div>
-            <div className="stat-value">{allBills.length}</div>
+            <div className="stat-label">{filter === 'paid' ? 'Paid bills' : filter === 'unpaid' ? 'Unpaid bills' : 'Bills this month'}</div>
+            <div className="stat-value">{bills.length}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Total amount</div>

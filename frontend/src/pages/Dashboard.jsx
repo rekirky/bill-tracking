@@ -66,8 +66,8 @@ export default function Dashboard() {
           <div className={`stat-value ${diff >= 0 ? 'green' : 'red'}`}>{fmt(diff)}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Bills this month</div>
-          <div className="stat-value">{data?.bills_this_month ?? 0}</div>
+          <div className="stat-label">Unpaid bills this month</div>
+          <div className="stat-value">{data?.bills_unpaid_this_month ?? 0}</div>
         </div>
       </div>
 
