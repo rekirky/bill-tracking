@@ -326,6 +326,8 @@ select option { background: var(--bg2); }
 
 /* ── Mobile ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  .main-wrapper { overflow-x: hidden; }
+
   .topbar {
     display: flex;
     align-items: center;
@@ -390,7 +392,9 @@ select option { background: var(--bg2); }
 
   .stat-grid { grid-template-columns: 1fr 1fr; }
 
-  .stat-value { font-size: 20px; }
+  .stat-card { padding: 14px 12px; }
+
+  .stat-value { font-size: 18px; }
   .stat-label { font-size: 10px; }
 
   .modal { padding: 20px; }
