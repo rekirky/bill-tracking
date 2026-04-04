@@ -67,6 +67,16 @@ button { cursor: pointer; font-family: inherit; }
 .sidebar-logo h1 { font-size: 20px; color: var(--text); }
 .sidebar-logo span { font-size: 11px; color: var(--text3); letter-spacing: 0.05em; }
 
+.nav-section {
+  padding: 16px 24px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text3);
+  margin-top: 8px;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -323,6 +333,175 @@ select option { background: var(--bg2); }
 .mt-24  { margin-top: 24px; }
 .w-full { width: 100%; }
 .error-msg { color: var(--red); font-size: 12px; margin-top: 8px; }
+
+/* ── Wealth ──────────────────────────────────────────────────────── */
+
+.wealth-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.wealth-stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+}
+
+.wealth-stat-card .stat-label { margin-bottom: 4px; }
+.wealth-stat-card .stat-value { font-size: 24px; margin-bottom: 4px; }
+
+.wealth-change {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.wealth-change.positive { color: var(--green); }
+.wealth-change.negative { color: var(--red); }
+.wealth-change.neutral  { color: var(--text3); }
+
+.wealth-pinned-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.wealth-pinned-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+}
+
+.wealth-pinned-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.wealth-pinned-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.wealth-pinned-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+  margin: 6px 0 2px;
+}
+
+.wealth-pinned-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.wealth-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.wealth-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Tag color swatches */
+.color-swatch-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.selected { border-color: var(--text); }
+
+/* Month grid for snapshot entry */
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.snapshot-row {
+  display: grid;
+  grid-template-columns: 200px 80px 1fr 160px 180px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.snapshot-row:last-child { border-bottom: none; }
+
+.snapshot-row-header {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+}
+
+/* Type badge */
+.type-badge-asset     { background: rgba(45,216,122,0.12); color: var(--green); }
+.type-badge-liability { background: rgba(255,92,92,0.12);  color: var(--red); }
+
+/* Tag multi-select */
+.tag-toggle-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.tag-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  transition: all 0.15s;
+}
+
+.tag-toggle.selected {
+  border-color: transparent;
+  color: var(--bg);
+}
+
+.tag-toggle:hover:not(.selected) { background: var(--bg3); color: var(--text); }
 
 /* ── Mobile ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {

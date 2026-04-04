@@ -51,3 +51,24 @@ export const getReconciliations = (accountId) =>
 export const getLiveTotal = (accountId) =>
   request('GET', `/reconciliations/live-total?account_id=${accountId}`)
 export const createReconciliation = (data) => request('POST', '/reconciliations/', data)
+
+// Wealth — Tags
+export const getWealthTags = () => request('GET', '/wealth/tags/')
+export const createWealthTag = (data) => request('POST', '/wealth/tags/', data)
+export const updateWealthTag = (id, data) => request('PATCH', `/wealth/tags/${id}`, data)
+export const deleteWealthTag = (id) => request('DELETE', `/wealth/tags/${id}`)
+
+// Wealth — Items
+export const getWealthItems = () => request('GET', '/wealth/items/')
+export const createWealthItem = (data) => request('POST', '/wealth/items/', data)
+export const updateWealthItem = (id, data) => request('PATCH', `/wealth/items/${id}`, data)
+export const deleteWealthItem = (id) => request('DELETE', `/wealth/items/${id}`)
+
+// Wealth — Snapshots
+export const getSnapshotsByMonth = (year, month) =>
+  request('GET', `/wealth/snapshots/by-month?year=${year}&month=${month}`)
+export const bulkUpsertSnapshots = (data) => request('POST', '/wealth/snapshots/bulk', data)
+export const deleteSnapshot = (id) => request('DELETE', `/wealth/snapshots/${id}`)
+
+// Wealth — Dashboard
+export const getWealthDashboard = () => request('GET', '/wealth/dashboard/')

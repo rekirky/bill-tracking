@@ -152,3 +152,121 @@ class MonthSummary(BaseModel):
     total_amount: float
     total_aside: float
     total_outstanding: float
+
+
+# ── Wealth Tags ───────────────────────────────────────────
+
+class WealthTagBase(BaseModel):
+    name: str
+    color: str = "#4f7cff"
+
+class WealthTagCreate(WealthTagBase):
+    pass
+
+class WealthTagUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+
+class WealthTag(WealthTagBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+
+# ── Wealth Items ──────────────────────────────────────────
+
+class WealthItemBase(BaseModel):
+    name: str
+    type: str  # "asset" or "liability"
+    show_on_dashboard: bool = False
+    dashboard_order: int = 0
+
+class WealthItemCreate(WealthItemBase):
+    tag_ids: list[int] = []
+
+class WealthItemUpdate(BaseModel):
+    name: Optional[str] = None
+    type: Optional[str] = None
+    is_active: Optional[bool] = None
+    show_on_dashboard: Optional[bool] = None
+    dashboard_order: Optional[int] = None
+    tag_ids: Optional[list[int]] = None
+
+class WealthItem(WealthItemBase):
+    id: int
+    is_active: bool
+    created_at: datetime
+    tags: list[WealthTag] = []
+    latest_value: Optional[float] = None
+    class Config:
+        from_attributes = True
+
+
+# ── Wealth Snapshots ──────────────────────────────────────
+
+class WealthSnapshotBase(BaseModel):
+    wealth_item_id: int
+    year: int
+    month: int
+    value: float
+    notes: Optional[str] = None
+
+class WealthSnapshotCreate(WealthSnapshotBase):
+    pass
+
+class WealthSnapshot(WealthSnapshotBase):
+    id: int
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class WealthSnapshotUpsert(BaseModel):
+    wealth_item_id: int
+    year: int
+    month: int
+    value: Optional[float] = None  # None means skip/clear
+    notes: Optional[str] = None
+
+
+# ── Wealth Dashboard ──────────────────────────────────────
+
+class WealthSparklinePoint(BaseModel):
+    year: int
+    month: int
+    value: float
+
+class WealthPinnedItem(BaseModel):
+    id: int
+    name: str
+    type: str
+    tags: list[WealthTag]
+    current_value: Optional[float]
+    previous_value: Optional[float]
+    sparkline: list[WealthSparklinePoint]
+
+class WealthHistoryPoint(BaseModel):
+    year: int
+    month: int
+    label: str
+    assets: float
+    liabilities: float
+    net_worth: float
+
+class WealthDashboard(BaseModel):
+    current_assets: float
+    current_liabilities: float
+    current_net_worth: float
+    previous_assets: Optional[float]
+    previous_liabilities: Optional[float]
+    previous_net_worth: Optional[float]
+    history: list[WealthHistoryPoint]
+    pinned_items: list[WealthPinnedItem]
+
+
+# ── Wealth Month Grid ─────────────────────────────────────
+
+class WealthMonthGridRow(BaseModel):
+    item: WealthItem
+    snapshot_id: Optional[int]
+    value: Optional[float]
+    notes: Optional[str]
