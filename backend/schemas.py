@@ -252,6 +252,14 @@ class WealthHistoryPoint(BaseModel):
     liabilities: float
     net_worth: float
 
+class WealthItemComparison(BaseModel):
+    id: int
+    name: str
+    type: str
+    tags: list[WealthTag]
+    current_value: Optional[float]
+    previous_value: Optional[float]
+
 class WealthDashboard(BaseModel):
     current_assets: float
     current_liabilities: float
@@ -259,8 +267,12 @@ class WealthDashboard(BaseModel):
     previous_assets: Optional[float]
     previous_liabilities: Optional[float]
     previous_net_worth: Optional[float]
+    current_month_label: Optional[str]
+    previous_month_label: Optional[str]
     history: list[WealthHistoryPoint]
     pinned_items: list[WealthPinnedItem]
+    asset_comparisons: list[WealthItemComparison]
+    liability_comparisons: list[WealthItemComparison]
 
 
 # ── Wealth Month Grid ─────────────────────────────────────

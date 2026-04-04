@@ -228,6 +228,35 @@ def wealth_dashboard(db: Session = Depends(get_db)):
     current = history[-1] if history else None
     previous = history[-2] if len(history) >= 2 else None
 
+    # Build snap lookup: (item_id, year, month) -> value
+    snap_lookup: dict[tuple, float] = {
+        (s.wealth_item_id, s.year, s.month): s.value for s in all_snaps
+    }
+
+    # Per-item comparisons using the same current/previous months from history
+    curr_key = (current.year, current.month) if current else None
+    prev_key = (previous.year, previous.month) if previous else None
+
+    asset_comparisons = []
+    liability_comparisons = []
+    for item in sorted(items, key=lambda i: i.name):
+        curr_val = snap_lookup.get((item.id,) + curr_key) if curr_key else None
+        prev_val = snap_lookup.get((item.id,) + prev_key) if prev_key else None
+        if curr_val is None and prev_val is None:
+            continue
+        comp = schemas.WealthItemComparison(
+            id=item.id,
+            name=item.name,
+            type=item.type,
+            tags=[schemas.WealthTag(id=t.id, name=t.name, color=t.color) for t in item.tags],
+            current_value=curr_val,
+            previous_value=prev_val,
+        )
+        if item.type == "asset":
+            asset_comparisons.append(comp)
+        else:
+            liability_comparisons.append(comp)
+
     # Pinned items sorted by dashboard_order
     pinned_items_db = sorted(
         [i for i in items if i.show_on_dashboard],
@@ -263,6 +292,10 @@ def wealth_dashboard(db: Session = Depends(get_db)):
         previous_assets=round(previous.assets, 2) if previous else None,
         previous_liabilities=round(previous.liabilities, 2) if previous else None,
         previous_net_worth=round(previous.net_worth, 2) if previous else None,
+        current_month_label=current.label if current else None,
+        previous_month_label=previous.label if previous else None,
         history=history,
         pinned_items=pinned,
+        asset_comparisons=asset_comparisons,
+        liability_comparisons=liability_comparisons,
     )

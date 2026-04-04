@@ -106,6 +106,66 @@ function PinnedCard({ item }) {
   )
 }
 
+function ComparisonTable({ title, items, prevLabel, currLabel, isLiability }) {
+  if (!items || items.length === 0) return null
+
+  return (
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+        <h3>{title}</h3>
+      </div>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Tags</th>
+              <th style={{ textAlign: 'right' }}>{prevLabel || 'Previous'}</th>
+              <th style={{ textAlign: 'right' }}>{currLabel || 'Current'}</th>
+              <th style={{ textAlign: 'right' }}>Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(item => {
+              const curr = item.current_value
+              const prev = item.previous_value
+              const diff = curr != null && prev != null ? curr - prev : null
+              // For assets: up = green, down = red
+              // For liabilities: down = green, up = red
+              let changeColor = 'var(--text2)'
+              if (diff != null && diff !== 0) {
+                const isPositive = diff > 0
+                changeColor = (isPositive !== isLiability) ? 'var(--green)' : 'var(--red)'
+              }
+              const sign = diff != null && diff > 0 ? '+' : ''
+
+              return (
+                <tr key={item.id}>
+                  <td style={{ fontWeight: 500 }}>{item.name}</td>
+                  <td>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {item.tags.map(t => <TagPill key={t.id} tag={t} />)}
+                    </div>
+                  </td>
+                  <td className="mono text-right" style={{ color: 'var(--text2)' }}>
+                    {prev != null ? fmt(prev) : '—'}
+                  </td>
+                  <td className="mono text-right" style={{ color: changeColor }}>
+                    {curr != null ? fmt(curr) : '—'}
+                  </td>
+                  <td className="mono text-right" style={{ color: changeColor }}>
+                    {diff != null ? `${sign}${fmt(diff)}` : '—'}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function NetWorthTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   const d = payload[0]?.payload
@@ -224,6 +284,26 @@ export default function WealthDashboard() {
             <p>No snapshot data yet.</p>
             <p>Go to <strong>Items &amp; Values</strong> to add your assets and liabilities, then enter monthly values.</p>
           </div>
+        </div>
+      )}
+
+      {/* Month-on-month comparison tables */}
+      {(data.asset_comparisons.length > 0 || data.liability_comparisons.length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
+          <ComparisonTable
+            title="Assets"
+            items={data.asset_comparisons}
+            prevLabel={data.previous_month_label}
+            currLabel={data.current_month_label}
+            isLiability={false}
+          />
+          <ComparisonTable
+            title="Liabilities"
+            items={data.liability_comparisons}
+            prevLabel={data.previous_month_label}
+            currLabel={data.current_month_label}
+            isLiability={true}
+          />
         </div>
       )}
 
