@@ -145,3 +145,69 @@ class WealthSnapshot(Base):
     __table_args__ = (
         UniqueConstraint("wealth_item_id", "year", "month", name="uq_snapshot_item_month"),
     )
+
+
+# ── Barefoot Investor ─────────────────────────────────────
+
+class BarefootIncomeStream(Base):
+    __tablename__ = "barefoot_income_streams"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    frequency = Column(String, nullable=False, default="monthly")  # weekly/fortnightly/monthly
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class BarefootSettings(Base):
+    __tablename__ = "barefoot_settings"
+
+    id = Column(Integer, primary_key=True)
+    smile_months_target = Column(Integer, default=3)
+
+
+class BarefootMonthlyEntry(Base):
+    __tablename__ = "barefoot_monthly_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bucket = Column(String, nullable=False)  # daily / splurge / smile / fire
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    amount = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("bucket", "year", "month", name="uq_barefoot_bucket_month"),
+    )
+
+
+class BarefootFireGoal(Base):
+    __tablename__ = "barefoot_fire_goals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    total_owed = Column(Float, nullable=False)
+    priority = Column(String, nullable=False, default="medium")  # low / medium / high
+    due_date = Column(Date, nullable=True)
+    is_paid_off = Column(Boolean, default=False)
+    paid_off_at = Column(DateTime, nullable=True)
+    is_slush_bill = Column(Boolean, default=False)
+    notes = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    allocations = relationship("BarefootFireAllocation", back_populates="goal", cascade="all, delete-orphan")
+
+
+class BarefootFireAllocation(Base):
+    __tablename__ = "barefoot_fire_allocations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    fire_goal_id = Column(Integer, ForeignKey("barefoot_fire_goals.id"), nullable=False)
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    amount = Column(Float, nullable=False)
+    notes = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    goal = relationship("BarefootFireGoal", back_populates="allocations")

@@ -282,3 +282,141 @@ class WealthMonthGridRow(BaseModel):
     snapshot_id: Optional[int]
     value: Optional[float]
     notes: Optional[str]
+
+
+# ── Barefoot Income ───────────────────────────────────────
+
+class BarefootIncomeStreamBase(BaseModel):
+    name: str
+    amount: float
+    frequency: str  # weekly / fortnightly / monthly
+    is_active: bool = True
+
+class BarefootIncomeStreamCreate(BarefootIncomeStreamBase):
+    pass
+
+class BarefootIncomeStreamUpdate(BaseModel):
+    name: Optional[str] = None
+    amount: Optional[float] = None
+    frequency: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class BarefootIncomeStream(BarefootIncomeStreamBase):
+    id: int
+    monthly_equivalent: float
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+
+# ── Barefoot Settings ─────────────────────────────────────
+
+class BarefootSettingsUpdate(BaseModel):
+    smile_months_target: Optional[int] = None
+
+class BarefootSettingsSchema(BaseModel):
+    id: int
+    smile_months_target: int
+    class Config:
+        from_attributes = True
+
+
+# ── Barefoot Monthly Entry ────────────────────────────────
+
+class BarefootMonthlyEntryUpsert(BaseModel):
+    bucket: str
+    year: int
+    month: int
+    amount: float
+
+class BarefootMonthlyEntry(BaseModel):
+    id: int
+    bucket: str
+    year: int
+    month: int
+    amount: float
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+
+# ── Barefoot Fire Allocation ──────────────────────────────
+
+class BarefootFireAllocationCreate(BaseModel):
+    fire_goal_id: int
+    year: int
+    month: int
+    amount: float
+    notes: Optional[str] = None
+
+class BarefootFireAllocationSchema(BaseModel):
+    id: int
+    fire_goal_id: int
+    year: int
+    month: int
+    amount: float
+    notes: Optional[str]
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+
+# ── Barefoot Fire Goal ────────────────────────────────────
+
+class BarefootFireGoalCreate(BaseModel):
+    name: str
+    total_owed: float
+    priority: str = "medium"
+    due_date: Optional[date] = None
+    is_slush_bill: bool = False
+    notes: Optional[str] = None
+
+class BarefootFireGoalUpdate(BaseModel):
+    name: Optional[str] = None
+    total_owed: Optional[float] = None
+    priority: Optional[str] = None
+    due_date: Optional[date] = None
+    notes: Optional[str] = None
+
+class BarefootFireGoalSchema(BaseModel):
+    id: int
+    name: str
+    total_owed: float
+    priority: str
+    due_date: Optional[date]
+    is_paid_off: bool
+    paid_off_at: Optional[datetime]
+    is_slush_bill: bool
+    notes: Optional[str]
+    total_allocated: float
+    remaining: float
+    progress_pct: float
+    allocations: list[BarefootFireAllocationSchema]
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+
+# ── Barefoot Dashboard ────────────────────────────────────
+
+class BarefootBucketTargets(BaseModel):
+    daily: float
+    splurge: float
+    smile: float
+    fire: float
+
+class BarefootDashboard(BaseModel):
+    year: int
+    month: int
+    monthly_income: float
+    targets: BarefootBucketTargets
+    this_month_deposits: dict
+    running_totals: dict
+    fire_mode: str  # "debts" or "slush"
+    fire_goals: list[BarefootFireGoalSchema]
+    fire_slush_balance: float
+    smile_balance: float
+    smile_months_target: int
+    smile_months_achieved: float
+    monthly_bills_total: float
+    settings: BarefootSettingsSchema

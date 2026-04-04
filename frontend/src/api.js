@@ -72,3 +72,34 @@ export const deleteSnapshot = (id) => request('DELETE', `/wealth/snapshots/${id}
 
 // Wealth — Dashboard
 export const getWealthDashboard = () => request('GET', '/wealth/dashboard/')
+
+// Barefoot — Settings
+export const getBarefootSettings = () => request('GET', '/barefoot/settings/')
+export const updateBarefootSettings = (data) => request('PATCH', '/barefoot/settings/', data)
+
+// Barefoot — Income
+export const getBarefootIncome = () => request('GET', '/barefoot/income/')
+export const createBarefootIncome = (data) => request('POST', '/barefoot/income/', data)
+export const updateBarefootIncome = (id, data) => request('PATCH', `/barefoot/income/${id}`, data)
+export const deleteBarefootIncome = (id) => request('DELETE', `/barefoot/income/${id}`)
+
+// Barefoot — Monthly Entries
+export const getBarefootEntries = (year, month) => request('GET', `/barefoot/entries/?year=${year}&month=${month}`)
+export const upsertBarefootEntry = (data) => request('POST', '/barefoot/entries/upsert', data)
+
+// Barefoot — Fire Goals
+export const getFireGoals = () => request('GET', '/barefoot/fire-goals/')
+export const createFireGoal = (data) => request('POST', '/barefoot/fire-goals/', data)
+export const updateFireGoal = (id, data) => request('PATCH', `/barefoot/fire-goals/${id}`, data)
+export const deleteFireGoal = (id) => request('DELETE', `/barefoot/fire-goals/${id}`)
+export const celebrateFireGoal = (id) => request('POST', `/barefoot/fire-goals/${id}/celebrate`, {})
+
+// Barefoot — Allocations
+export const createFireAllocation = (data) => request('POST', '/barefoot/fire-allocations/', data)
+export const deleteFireAllocation = (id) => request('DELETE', `/barefoot/fire-allocations/${id}`)
+
+// Barefoot — Dashboard
+export const getBarefootDashboard = (year, month) => {
+  const q = year && month ? `?year=${year}&month=${month}` : ''
+  return request('GET', `/barefoot/dashboard/${q}`)
+}

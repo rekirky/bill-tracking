@@ -503,6 +503,475 @@ select option { background: var(--bg2); }
 
 .tag-toggle:hover:not(.selected) { background: var(--bg3); color: var(--text); }
 
+/* ── Barefoot Investor ───────────────────────────────────────────── */
+
+.bf-bucket-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.bf-bucket-card {
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.bf-bucket-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.bf-bucket-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bucket-color);
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+.bf-bucket-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.bf-bucket-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bf-bucket-emoji { font-size: 22px; }
+
+.bf-bucket-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.bf-bucket-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bucket-color);
+  background: color-mix(in srgb, var(--bucket-color) 15%, transparent);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.bf-bucket-amounts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bf-bucket-amount-item {}
+.bf-bucket-amount-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+  margin-bottom: 3px;
+}
+.bf-bucket-amount-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+}
+.bf-bucket-amount-value.accent { color: var(--bucket-color); }
+
+/* Bucket progress bar */
+.bf-progress-track {
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.bf-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--bucket-color);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.bf-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 40px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+  border-radius: 4px;
+}
+
+.bf-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.bf-bucket-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.bf-bucket-input-row input {
+  flex: 1;
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  background: rgba(0,0,0,0.3);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.bf-bucket-input-row input:focus {
+  border-color: var(--bucket-color);
+}
+
+.bf-save-btn {
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  background: var(--bucket-color);
+  color: #000;
+  opacity: 0.9;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.bf-save-btn:hover { opacity: 1; }
+.bf-save-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Smile security */
+.bf-smile-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.bf-security-bar-wrap {
+  margin: 16px 0 8px;
+  position: relative;
+}
+
+.bf-security-track {
+  height: 20px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.bf-security-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #2dd87a, #06b6d4);
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+
+.bf-security-fill-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #000;
+  white-space: nowrap;
+}
+
+.bf-security-target-line {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--amber);
+  border-radius: 1px;
+}
+
+.bf-security-target-label {
+  position: absolute;
+  top: -20px;
+  font-size: 10px;
+  color: var(--amber);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.bf-months-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.bf-months-big {
+  font-family: 'DM Serif Display', serif;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--green);
+}
+
+.bf-months-label {
+  font-size: 14px;
+  color: var(--text2);
+}
+
+/* Fire goal cards */
+.bf-fire-section {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.bf-fire-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bf-goal-card {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bf-goal-card:last-child { border-bottom: none; }
+
+.bf-goal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bf-goal-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+
+.bf-priority-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.bf-priority-high   { background: rgba(255,92,92,0.2);  color: #ff5c5c; }
+.bf-priority-medium { background: rgba(245,166,35,0.2); color: #f5a623; }
+.bf-priority-low    { background: rgba(45,216,122,0.2); color: #2dd87a; }
+
+.bf-goal-meta {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.bf-goal-meta span { display: flex; gap: 4px; }
+.bf-goal-meta strong { color: var(--text); font-family: 'DM Mono', monospace; }
+
+.bf-goal-progress-track {
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.bf-goal-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #ff5c5c, #f5a623, #2dd87a);
+  background-size: 200% 100%;
+  background-position: right;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-position 0.6s;
+}
+
+.bf-goal-progress-fill.complete {
+  background-position: left;
+}
+
+.bf-goal-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.bf-goal-allocations {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.bf-allocation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.bf-allocation-row .mono { color: var(--text); }
+
+/* Slush balance */
+.bf-slush-balance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(79,124,255,0.06);
+  border-bottom: 1px solid var(--border);
+}
+
+.bf-slush-amount {
+  font-family: 'DM Mono', monospace;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* Celebration / fireworks */
+@keyframes fw-burst {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+@keyframes fw-fadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.bf-celebration-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  cursor: pointer;
+}
+
+.bf-celebration-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 48px 56px;
+  text-align: center;
+  position: relative;
+  animation: fw-fadeIn 0.4s ease;
+  max-width: 400px;
+}
+
+.bf-celebration-emoji {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 16px;
+  animation: fw-fadeIn 0.4s 0.2s both;
+}
+
+.bf-celebration-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.bf-celebration-sub {
+  color: var(--text2);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.bf-particle {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: fw-burst var(--dur) ease-out var(--delay) both;
+}
+
+/* Income tab */
+.bf-income-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.bf-income-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.bf-income-info { flex: 1; }
+.bf-income-name { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+.bf-income-sub  { font-size: 12px; color: var(--text2); }
+
+.bf-income-monthly {
+  font-family: 'DM Mono', monospace;
+  font-size: 18px;
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.bf-income-total-bar {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.bf-freq-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(79,124,255,0.15);
+  color: var(--accent);
+}
+
 /* ── Mobile ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .main-wrapper { overflow-x: hidden; }

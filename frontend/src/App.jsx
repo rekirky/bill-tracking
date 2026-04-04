@@ -7,6 +7,7 @@ import Accounts from './pages/Accounts.jsx'
 import Reconcile from './pages/Reconcile.jsx'
 import WealthDashboard from './pages/WealthDashboard.jsx'
 import WealthItems from './pages/WealthItems.jsx'
+import Barefoot from './pages/Barefoot.jsx'
 
 function NavSection({ label }) {
   return <div className="nav-section">{label}</div>
@@ -43,6 +44,11 @@ function Sidebar({ open, onClose }) {
         <NavLink to="/wealth/items" className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')} onClick={onClose}>
           <span className="nav-icon">◫</span> Items &amp; Values
         </NavLink>
+
+        <NavSection label="Barefoot Investor" />
+        <NavLink to="/barefoot" className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')} onClick={onClose}>
+          <span className="nav-icon">👣</span> Tracker
+        </NavLink>
       </nav>
     </>
   )
@@ -68,6 +74,7 @@ export default function App() {
               <Route path="/accounts" element={<Accounts />} />
               <Route path="/wealth" element={<WealthDashboard />} />
               <Route path="/wealth/items" element={<WealthItems />} />
+              <Route path="/barefoot" element={<Barefoot />} />
             </Routes>
           </main>
         </div>
