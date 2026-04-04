@@ -87,7 +87,7 @@ function Celebration({ goalName, onClose }) {
 
 // ── Bucket Card ───────────────────────────────────────────
 
-function BucketCard({ bucket, config, target, deposited, runningTotal, year, month, onSaved, pct }) {
+function BucketCard({ bucket, config, target, deposited, runningTotal, year, month, onSaved, pct: ratioPct }) {
   const [value, setValue] = useState(deposited != null ? String(deposited) : '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -131,7 +131,7 @@ function BucketCard({ bucket, config, target, deposited, runningTotal, year, mon
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
           </div>
         </div>
-        <span className="bf-bucket-pct">{pct ?? config.pct}%</span>
+        <span className="bf-bucket-pct">{ratioPct ?? config.pct}%</span>
       </div>
 
       <div className="bf-bucket-amounts">
