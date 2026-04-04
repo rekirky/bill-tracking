@@ -103,3 +103,6 @@ export const getBarefootDashboard = (year, month) => {
   const q = year && month ? `?year=${year}&month=${month}` : ''
   return request('GET', `/barefoot/dashboard/${q}`)
 }
+
+// Barefoot — Linkable liabilities
+export const getLinkableLiabilities = () => request('GET', '/barefoot/linkable-liabilities/')

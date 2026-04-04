@@ -7,6 +7,7 @@ import {
   getFireGoals, createFireGoal, updateFireGoal, deleteFireGoal, celebrateFireGoal,
   createFireAllocation, deleteFireAllocation,
   updateBarefootSettings,
+  getLinkableLiabilities,
 } from '../api.js'
 
 const MONTH_NAMES = ['January','February','March','April','May','June',
@@ -353,26 +354,61 @@ function AllocationModal({ goal, onClose, onSave }) {
 
 // ── Fire Goal Form Modal ──────────────────────────────────
 
-function FireGoalModal({ goal, isSlushBill, onClose, onSave }) {
-  const [name, setName] = useState(goal?.name || '')
-  const [totalOwed, setTotalOwed] = useState(goal?.total_owed != null ? String(goal.total_owed) : '')
+function FireGoalModal({ goal, isSlushBill, prefillLiability, onClose, onSave }) {
+  const slush = isSlushBill ?? goal?.is_slush_bill ?? false
+
+  const [name, setName] = useState(goal?.name || prefillLiability?.name || '')
+  const [totalOwed, setTotalOwed] = useState(
+    goal?.total_owed != null ? String(goal.total_owed)
+    : prefillLiability?.latest_value != null ? String(prefillLiability.latest_value)
+    : ''
+  )
   const [priority, setPriority] = useState(goal?.priority || 'medium')
   const [dueDate, setDueDate] = useState(goal?.due_date || '')
   const [notes, setNotes] = useState(goal?.notes || '')
+  const [linkedId, setLinkedId] = useState(
+    goal?.wealth_item_id ?? prefillLiability?.id ?? null
+  )
+  const [linkableLiabilities, setLinkableLiabilities] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    // Only load linkable liabilities for new debt goals (not slush, not editing a linked goal)
+    if (!slush && !goal?.wealth_item_id) {
+      getLinkableLiabilities().then(setLinkableLiabilities).catch(() => {})
+    }
+  }, [slush, goal])
+
+  // When a liability is selected, auto-fill name + amount
+  function handleLiabilitySelect(e) {
+    const id = e.target.value ? Number(e.target.value) : null
+    setLinkedId(id)
+    if (id) {
+      const lib = linkableLiabilities.find(l => l.id === id)
+      if (lib) {
+        if (!name || name === '') setName(lib.name)
+        if (!totalOwed && lib.latest_value != null) setTotalOwed(String(lib.latest_value))
+      }
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     const amt = parseFloat(totalOwed)
     if (!name.trim()) { setError('Name is required'); return }
-    if (isNaN(amt) || amt <= 0) { setError('Enter a valid amount'); return }
+    // Amount not required if linking — backend will pull from snapshot
+    if (!linkedId && (isNaN(amt) || amt <= 0)) { setError('Enter a valid amount'); return }
     setSaving(true)
     try {
       const payload = {
-        name: name.trim(), total_owed: amt, priority,
-        due_date: dueDate || null, notes: notes || null,
-        is_slush_bill: isSlushBill ?? goal?.is_slush_bill ?? false,
+        name: name.trim(),
+        total_owed: linkedId ? (parseFloat(totalOwed) || 0) : amt,
+        priority,
+        due_date: dueDate || null,
+        notes: notes || null,
+        is_slush_bill: slush,
+        wealth_item_id: linkedId || null,
       }
       if (goal) { await updateFireGoal(goal.id, payload) }
       else { await createFireGoal(payload) }
@@ -384,7 +420,6 @@ function FireGoalModal({ goal, isSlushBill, onClose, onSave }) {
     }
   }
 
-  const slush = isSlushBill ?? goal?.is_slush_bill ?? false
   const title = goal ? 'Edit Goal' : slush ? 'New Slush Bill' : 'New Debt Goal'
 
   return (
@@ -394,14 +429,44 @@ function FireGoalModal({ goal, isSlushBill, onClose, onSave }) {
         <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
       </div>
       <form onSubmit={handleSubmit} className="form-grid">
+
+        {/* Liability link — only for debt goals */}
+        {!slush && !goal?.wealth_item_id && linkableLiabilities.length > 0 && (
+          <div className="field">
+            <label>Link to Asset Tracker liability <span style={{ color: 'var(--text3)', fontWeight: 400 }}>(optional)</span></label>
+            <select value={linkedId ?? ''} onChange={handleLiabilitySelect}>
+              <option value="">— Manual goal —</option>
+              {linkableLiabilities.map(l => (
+                <option key={l.id} value={l.id}>
+                  {l.name}{l.latest_value != null ? ` — $${Math.round(l.latest_value).toLocaleString()}` : ''}
+                </option>
+              ))}
+            </select>
+            {linkedId && (
+              <p style={{ fontSize: 11, color: 'var(--green)', marginTop: 4 }}>
+                ✓ Remaining will update automatically from your monthly wealth snapshots
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Show linked badge when editing an already-linked goal */}
+        {goal?.is_linked && (
+          <div style={{ padding: '10px 14px', background: 'rgba(79,124,255,0.08)', borderRadius: 8, fontSize: 12, color: 'var(--accent)' }}>
+            📊 Linked to <strong>{goal.linked_item_name}</strong> — remaining balance updates from your monthly wealth snapshot
+          </div>
+        )}
+
         <div className="field">
           <label>{slush ? 'Bill name' : 'Debt name'}</label>
           <input value={name} onChange={e => setName(e.target.value)} placeholder={slush ? 'e.g. Car service' : 'e.g. HECS Debt'} autoFocus />
         </div>
-        <div className="field">
-          <label>{slush ? 'Amount ($)' : 'Total owed ($)'}</label>
-          <input type="number" step="0.01" min="0.01" value={totalOwed} onChange={e => setTotalOwed(e.target.value)} placeholder="0.00" />
-        </div>
+        {!linkedId && (
+          <div className="field">
+            <label>{slush ? 'Amount ($)' : 'Total owed ($)'}</label>
+            <input type="number" step="0.01" min="0.01" value={totalOwed} onChange={e => setTotalOwed(e.target.value)} placeholder="0.00" />
+          </div>
+        )}
         {!slush && (
           <div className="field">
             <label>Priority</label>
@@ -466,6 +531,15 @@ function FireGoalCard({ goal, onRefresh, onCelebrate }) {
           {goal.is_slush_bill ? '💸 ' : ''}{goal.name}
           {isPaidOff && <span style={{ marginLeft: 8, color: 'var(--green)', fontSize: 12 }}>✓ Paid off</span>}
         </span>
+        {goal.is_linked && (
+          <span style={{
+            fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+            padding: '2px 8px', borderRadius: 20,
+            background: 'rgba(79,124,255,0.15)', color: 'var(--accent)',
+          }}>
+            📊 Linked
+          </span>
+        )}
         {!goal.is_slush_bill && (
           <span className={`bf-priority-badge bf-priority-${goal.priority}`}>{goal.priority}</span>
         )}
@@ -477,9 +551,16 @@ function FireGoalCard({ goal, onRefresh, onCelebrate }) {
       </div>
 
       <div className="bf-goal-meta">
-        <span>Total: <strong>{fmt(goal.total_owed)}</strong></span>
-        <span>Paid: <strong style={{ color: 'var(--green)' }}>{fmt(goal.total_allocated)}</strong></span>
-        <span>Remaining: <strong style={{ color: goal.remaining > 0 ? '#ff5c5c' : 'var(--green)' }}>{fmt(goal.remaining)}</strong></span>
+        <span>Original: <strong>{fmt(goal.total_owed)}</strong></span>
+        <span>
+          {goal.is_linked ? 'Fire payments: ' : 'Paid: '}
+          <strong style={{ color: 'var(--green)' }}>{fmt(goal.total_allocated)}</strong>
+        </span>
+        <span>
+          {goal.is_linked ? 'Current balance: ' : 'Remaining: '}
+          <strong style={{ color: goal.remaining > 0 ? '#ff5c5c' : 'var(--green)' }}>{fmt(goal.remaining)}</strong>
+          {goal.is_linked && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>(from tracker)</span>}
+        </span>
         {goal.notes && <span style={{ color: 'var(--text3)' }}>{goal.notes}</span>}
       </div>
 
@@ -644,6 +725,12 @@ function FireGoalsTab({ data, onRefresh }) {
   const [celebration, setCelebration] = useState(null)
   const [addDebt, setAddDebt] = useState(false)
   const [addSlush, setAddSlush] = useState(false)
+  const [linkableLiabilities, setLinkableLiabilities] = useState([])
+  const [linkModal, setLinkModal] = useState(null) // prefill liability object
+
+  useEffect(() => {
+    getLinkableLiabilities().then(setLinkableLiabilities).catch(() => {})
+  }, [data])
 
   const activeDebts = data.fire_goals.filter(g => !g.is_paid_off && !g.is_slush_bill)
     .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
@@ -667,6 +754,42 @@ function FireGoalsTab({ data, onRefresh }) {
           <button className="btn btn-primary" onClick={() => setAddDebt(true)}>+ Add debt</button>
         </div>
       </div>
+
+      {/* Unlinked Fire-tagged liabilities notice */}
+      {linkableLiabilities.length > 0 && (
+        <div style={{
+          marginBottom: 20,
+          padding: '14px 18px',
+          background: 'rgba(79,124,255,0.07)',
+          border: '1px solid rgba(79,124,255,0.25)',
+          borderRadius: 'var(--radius-lg)',
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', marginBottom: 10 }}>
+            📊 Asset Tracker liabilities tagged Fire
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {linkableLiabilities.map(lib => (
+              <div key={lib.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+                <span>
+                  <strong style={{ color: 'var(--text)' }}>{lib.name}</strong>
+                  {lib.latest_value != null && (
+                    <span style={{ color: 'var(--text2)', marginLeft: 8, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>
+                      ${Math.round(lib.latest_value).toLocaleString()}
+                    </span>
+                  )}
+                </span>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ borderColor: 'rgba(79,124,255,0.4)', color: 'var(--accent)' }}
+                  onClick={() => setLinkModal(lib)}
+                >
+                  + Create linked goal
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Active debts */}
       {activeDebts.length > 0 && (
@@ -717,6 +840,14 @@ function FireGoalsTab({ data, onRefresh }) {
 
       {addDebt && <FireGoalModal isSlushBill={false} onClose={() => setAddDebt(false)} onSave={() => { setAddDebt(false); onRefresh() }} />}
       {addSlush && <FireGoalModal isSlushBill={true} onClose={() => setAddSlush(false)} onSave={() => { setAddSlush(false); onRefresh() }} />}
+      {linkModal && (
+        <FireGoalModal
+          isSlushBill={false}
+          prefillLiability={linkModal}
+          onClose={() => setLinkModal(null)}
+          onSave={() => { setLinkModal(null); onRefresh() }}
+        />
+      )}
     </div>
   )
 }

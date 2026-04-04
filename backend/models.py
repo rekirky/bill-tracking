@@ -194,9 +194,12 @@ class BarefootFireGoal(Base):
     paid_off_at = Column(DateTime, nullable=True)
     is_slush_bill = Column(Boolean, default=False)
     notes = Column(String, nullable=True)
+    # Optional link to a wealth liability item — remaining is driven by its snapshots
+    wealth_item_id = Column(Integer, ForeignKey("wealth_items.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     allocations = relationship("BarefootFireAllocation", back_populates="goal", cascade="all, delete-orphan")
+    linked_wealth_item = relationship("WealthItem", foreign_keys=[wealth_item_id])
 
 
 class BarefootFireAllocation(Base):

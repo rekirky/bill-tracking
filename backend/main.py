@@ -16,6 +16,13 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE bills ADD COLUMN series_id INTEGER"))
         conn.commit()
 
+# Migrate: add wealth_item_id to barefoot_fire_goals if it doesn't exist
+with engine.connect() as conn:
+    existing = [row[1] for row in conn.execute(text("PRAGMA table_info(barefoot_fire_goals)"))]
+    if existing and "wealth_item_id" not in existing:
+        conn.execute(text("ALTER TABLE barefoot_fire_goals ADD COLUMN wealth_item_id INTEGER REFERENCES wealth_items(id)"))
+        conn.commit()
+
 app = FastAPI(title="BillTracker API", version="1.0.0")
 
 app.add_middleware(

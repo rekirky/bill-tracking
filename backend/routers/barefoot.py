@@ -35,11 +35,38 @@ def _get_or_create_settings(db: Session) -> models.BarefootSettings:
     return s
 
 
+def _latest_snapshot_value(goal: models.BarefootFireGoal) -> float | None:
+    """Return the latest Asset Tracker snapshot value for a linked liability, or None."""
+    if not goal.wealth_item_id or not goal.linked_wealth_item:
+        return None
+    snaps = goal.linked_wealth_item.snapshots
+    if not snaps:
+        return None
+    return max(snaps, key=lambda s: (s.year, s.month)).value
+
+
 def _goal_to_schema(goal: models.BarefootFireGoal) -> schemas.BarefootFireGoalSchema:
-    total_allocated = sum(a.amount for a in goal.allocations)
-    remaining = max(0.0, goal.total_owed - total_allocated)
-    progress_pct = round(min(100.0, (total_allocated / goal.total_owed * 100) if goal.total_owed > 0 else 0), 1)
+    total_allocated = round(sum(a.amount for a in goal.allocations), 2)
     allocations = sorted(goal.allocations, key=lambda a: (a.year, a.month, a.id), reverse=True)
+
+    is_linked = goal.wealth_item_id is not None
+    linked_item_name = goal.linked_wealth_item.name if is_linked and goal.linked_wealth_item else None
+
+    if is_linked:
+        # Remaining = live snapshot value (fluctuates with market/repayments)
+        snapshot_val = _latest_snapshot_value(goal)
+        remaining = round(snapshot_val, 2) if snapshot_val is not None else round(goal.total_owed, 2)
+        # Progress = how much the balance has dropped from the original total_owed
+        if goal.total_owed > 0:
+            drop = goal.total_owed - remaining
+            progress_pct = round(max(0.0, min(100.0, drop / goal.total_owed * 100)), 1)
+        else:
+            progress_pct = 0.0
+    else:
+        # Manual goal: allocations reduce the remaining
+        remaining = round(max(0.0, goal.total_owed - total_allocated), 2)
+        progress_pct = round(min(100.0, (total_allocated / goal.total_owed * 100) if goal.total_owed > 0 else 0), 1)
+
     return schemas.BarefootFireGoalSchema(
         id=goal.id,
         name=goal.name,
@@ -50,8 +77,11 @@ def _goal_to_schema(goal: models.BarefootFireGoal) -> schemas.BarefootFireGoalSc
         paid_off_at=goal.paid_off_at,
         is_slush_bill=goal.is_slush_bill,
         notes=goal.notes,
-        total_allocated=round(total_allocated, 2),
-        remaining=round(remaining, 2),
+        wealth_item_id=goal.wealth_item_id,
+        is_linked=is_linked,
+        linked_item_name=linked_item_name,
+        total_allocated=total_allocated,
+        remaining=remaining,
         progress_pct=progress_pct,
         allocations=[schemas.BarefootFireAllocationSchema.model_validate(a) for a in allocations],
         created_at=goal.created_at,
@@ -162,6 +192,38 @@ def upsert_entry(payload: schemas.BarefootMonthlyEntryUpsert, db: Session = Depe
     return entry
 
 
+# ── Linkable Liabilities ──────────────────────────────────
+
+@router.get("/linkable-liabilities/", response_model=list[schemas.LinkableLiability])
+def linkable_liabilities(db: Session = Depends(get_db)):
+    """Return active liability wealth items with a 'fire' tag that have no linked fire goal yet."""
+    already_linked_ids = {
+        g.wealth_item_id
+        for g in db.query(models.BarefootFireGoal).filter(models.BarefootFireGoal.wealth_item_id.isnot(None)).all()
+    }
+    items = (
+        db.query(models.WealthItem)
+        .filter(models.WealthItem.type == "liability", models.WealthItem.is_active == True)
+        .all()
+    )
+    result = []
+    for item in items:
+        if item.id in already_linked_ids:
+            continue
+        tag_names = [t.name.lower() for t in item.tags]
+        if "fire" not in tag_names:
+            continue
+        snaps = item.snapshots
+        latest_value = max(snaps, key=lambda s: (s.year, s.month)).value if snaps else None
+        result.append(schemas.LinkableLiability(
+            id=item.id,
+            name=item.name,
+            latest_value=latest_value,
+            tags=[{"id": t.id, "name": t.name, "color": t.color} for t in item.tags],
+        ))
+    return result
+
+
 # ── Fire Goals ────────────────────────────────────────────
 
 @router.get("/fire-goals/", response_model=list[schemas.BarefootFireGoalSchema])
@@ -177,7 +239,14 @@ def list_fire_goals(db: Session = Depends(get_db)):
 
 @router.post("/fire-goals/", response_model=schemas.BarefootFireGoalSchema, status_code=201)
 def create_fire_goal(payload: schemas.BarefootFireGoalCreate, db: Session = Depends(get_db)):
-    goal = models.BarefootFireGoal(**payload.model_dump())
+    data = payload.model_dump()
+    # If linking to a wealth item, seed total_owed from its latest snapshot
+    if data.get("wealth_item_id"):
+        item = db.query(models.WealthItem).filter(models.WealthItem.id == data["wealth_item_id"]).first()
+        if item and item.snapshots:
+            latest = max(item.snapshots, key=lambda s: (s.year, s.month))
+            data["total_owed"] = latest.value
+    goal = models.BarefootFireGoal(**data)
     db.add(goal)
     db.commit()
     db.refresh(goal)

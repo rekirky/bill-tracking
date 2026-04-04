@@ -370,6 +370,7 @@ class BarefootFireGoalCreate(BaseModel):
     due_date: Optional[date] = None
     is_slush_bill: bool = False
     notes: Optional[str] = None
+    wealth_item_id: Optional[int] = None
 
 class BarefootFireGoalUpdate(BaseModel):
     name: Optional[str] = None
@@ -377,6 +378,7 @@ class BarefootFireGoalUpdate(BaseModel):
     priority: Optional[str] = None
     due_date: Optional[date] = None
     notes: Optional[str] = None
+    wealth_item_id: Optional[int] = None
 
 class BarefootFireGoalSchema(BaseModel):
     id: int
@@ -388,6 +390,9 @@ class BarefootFireGoalSchema(BaseModel):
     paid_off_at: Optional[datetime]
     is_slush_bill: bool
     notes: Optional[str]
+    wealth_item_id: Optional[int]
+    is_linked: bool
+    linked_item_name: Optional[str]
     total_allocated: float
     remaining: float
     progress_pct: float
@@ -395,6 +400,13 @@ class BarefootFireGoalSchema(BaseModel):
     created_at: datetime
     class Config:
         from_attributes = True
+
+
+class LinkableLiability(BaseModel):
+    id: int
+    name: str
+    latest_value: Optional[float]
+    tags: list
 
 
 # ── Barefoot Dashboard ────────────────────────────────────
