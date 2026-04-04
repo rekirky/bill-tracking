@@ -313,10 +313,18 @@ class BarefootIncomeStream(BarefootIncomeStreamBase):
 
 class BarefootSettingsUpdate(BaseModel):
     smile_months_target: Optional[int] = None
+    pct_daily: Optional[float] = None
+    pct_splurge: Optional[float] = None
+    pct_smile: Optional[float] = None
+    pct_fire: Optional[float] = None
 
 class BarefootSettingsSchema(BaseModel):
     id: int
     smile_months_target: int
+    pct_daily: float
+    pct_splurge: float
+    pct_smile: float
+    pct_fire: float
     class Config:
         from_attributes = True
 

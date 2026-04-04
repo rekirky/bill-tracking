@@ -165,6 +165,10 @@ class BarefootSettings(Base):
 
     id = Column(Integer, primary_key=True)
     smile_months_target = Column(Integer, default=3)
+    pct_daily = Column(Float, default=60.0)
+    pct_splurge = Column(Float, default=10.0)
+    pct_smile = Column(Float, default=10.0)
+    pct_fire = Column(Float, default=20.0)
 
 
 class BarefootMonthlyEntry(Base):

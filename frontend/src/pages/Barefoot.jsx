@@ -87,7 +87,7 @@ function Celebration({ goalName, onClose }) {
 
 // ── Bucket Card ───────────────────────────────────────────
 
-function BucketCard({ bucket, config, target, deposited, runningTotal, year, month, onSaved }) {
+function BucketCard({ bucket, config, target, deposited, runningTotal, year, month, onSaved, pct }) {
   const [value, setValue] = useState(deposited != null ? String(deposited) : '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -131,7 +131,7 @@ function BucketCard({ bucket, config, target, deposited, runningTotal, year, mon
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
           </div>
         </div>
-        <span className="bf-bucket-pct">{config.pct}%</span>
+        <span className="bf-bucket-pct">{pct ?? config.pct}%</span>
       </div>
 
       <div className="bf-bucket-amounts">
@@ -140,7 +140,7 @@ function BucketCard({ bucket, config, target, deposited, runningTotal, year, mon
           <div className="bf-bucket-amount-value">{fmt(target)}</div>
         </div>
         <div className="bf-bucket-amount-item">
-          <div className="bf-bucket-amount-label">This month</div>
+          <div className="bf-bucket-amount-label">Deposited</div>
           <div className="bf-bucket-amount-value accent">{fmt(deposited)}</div>
         </div>
         <div className="bf-bucket-amount-item">
@@ -148,12 +148,16 @@ function BucketCard({ bucket, config, target, deposited, runningTotal, year, mon
           <div className="bf-bucket-amount-value">{fmt(runningTotal)}</div>
         </div>
         <div className="bf-bucket-amount-item">
-          <div className="bf-bucket-amount-label">vs target</div>
+          <div className="bf-bucket-amount-label">
+            {deposited != null && deposited >= target ? 'Over by' : 'To go'}
+          </div>
           <div className="bf-bucket-amount-value" style={{
             color: deposited == null ? 'var(--text3)'
-              : deposited >= target ? '#2dd87a' : '#ff5c5c'
+              : deposited >= target ? '#2dd87a' : 'var(--amber)'
           }}>
-            {deposited != null && target > 0 ? `${displayPct}%` : '—'}
+            {deposited != null && target > 0
+              ? fmt(Math.abs(target - (deposited || 0)))
+              : '—'}
           </div>
         </div>
       </div>
@@ -713,10 +717,10 @@ function OverviewTab({ data, year, month, onDataChange }) {
             </div>
           </div>
           <div style={{ fontSize: 12, color: 'var(--text2)', textAlign: 'right' }}>
-            <div>Daily {fmt(data.targets.daily)}</div>
-            <div>Splurge {fmt(data.targets.splurge)}</div>
-            <div>Smile {fmt(data.targets.smile)}</div>
-            <div>Fire {fmt(data.targets.fire)}</div>
+            <div>Daily ({data.settings.pct_daily}%) {fmt(data.targets.daily)}</div>
+            <div>Splurge ({data.settings.pct_splurge}%) {fmt(data.targets.splurge)}</div>
+            <div>Smile ({data.settings.pct_smile}%) {fmt(data.targets.smile)}</div>
+            <div>Fire ({data.settings.pct_fire}%) {fmt(data.targets.fire)}</div>
           </div>
         </div>
       )}
@@ -744,6 +748,7 @@ function OverviewTab({ data, year, month, onDataChange }) {
                 year={year}
                 month={month}
                 onSaved={onDataChange}
+                pct={data.settings[`pct_${key}`]}
               />
         ))}
       </div>
@@ -987,7 +992,97 @@ function IncomeModal({ stream, onClose, onSave }) {
   )
 }
 
-function IncomeTab() {
+function BucketRatioEditor({ settings, onSaved }) {
+  const [daily, setDaily] = useState(String(settings.pct_daily ?? 60))
+  const [splurge, setSplurge] = useState(String(settings.pct_splurge ?? 10))
+  const [smile, setSmile] = useState(String(settings.pct_smile ?? 10))
+  const [fire, setFire] = useState(String(settings.pct_fire ?? 20))
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [saved, setSaved] = useState(false)
+
+  const total = (parseFloat(daily) || 0) + (parseFloat(splurge) || 0) + (parseFloat(smile) || 0) + (parseFloat(fire) || 0)
+  const totalOk = Math.abs(total - 100) < 0.01
+
+  async function handleSave() {
+    if (!totalOk) { setError('Ratios must add up to 100%'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      await updateBarefootSettings({
+        pct_daily: parseFloat(daily),
+        pct_splurge: parseFloat(splurge),
+        pct_smile: parseFloat(smile),
+        pct_fire: parseFloat(fire),
+      })
+      setSaved(true)
+      onSaved()
+      setTimeout(() => setSaved(false), 2000)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const buckets = [
+    { key: 'daily',   label: 'Daily Expenses', emoji: '🏠', color: '#4f7cff', val: daily,   set: setDaily },
+    { key: 'splurge', label: 'Splurge',         emoji: '🎉', color: '#f5a623', val: splurge, set: setSplurge },
+    { key: 'smile',   label: 'Smile',           emoji: '😊', color: '#2dd87a', val: smile,   set: setSmile },
+    { key: 'fire',    label: 'Fire Extinguisher',emoji: '🔥', color: '#ff5c5c', val: fire,    set: setFire },
+  ]
+
+  return (
+    <div style={{ marginBottom: 32, padding: '20px 24px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>Bucket Ratios</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>How your income is split across each bucket</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: totalOk ? '#2dd87a' : '#ff5c5c', fontWeight: 600 }}>
+            {total.toFixed(1)}% total
+          </span>
+          <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving || !totalOk}>
+            {saved ? '✓ Saved' : saving ? '…' : 'Save ratios'}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        {buckets.map(b => (
+          <div key={b.key} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 12, color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span>{b.emoji}</span> {b.label}
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={b.val}
+                onChange={e => b.set(e.target.value)}
+                style={{ paddingRight: 24, borderColor: `color-mix(in srgb, ${b.color} 40%, var(--border))` }}
+              />
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--text3)', pointerEvents: 'none' }}>%</span>
+            </div>
+            <div style={{ height: 4, borderRadius: 2, background: `color-mix(in srgb, ${b.color} ${parseFloat(b.val) || 0}%, var(--border))` }} />
+          </div>
+        ))}
+      </div>
+
+      {!totalOk && (
+        <div style={{ marginTop: 12, fontSize: 12, color: '#ff5c5c' }}>
+          Ratios must add up to 100% (currently {total.toFixed(1)}%)
+        </div>
+      )}
+      {error && <div style={{ marginTop: 8, fontSize: 12, color: '#ff5c5c' }}>{error}</div>}
+    </div>
+  )
+}
+
+function IncomeTab({ data, onDataChange }) {
   const [streams, setStreams] = useState([])
   const [loading, setLoading] = useState(true)
   const [addModal, setAddModal] = useState(false)
@@ -1014,6 +1109,10 @@ function IncomeTab() {
 
   return (
     <div>
+      {data?.settings && (
+        <BucketRatioEditor settings={data.settings} onSaved={onDataChange} />
+      )}
+
       <div className="bf-income-total-bar">
         <div>
           <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
@@ -1097,7 +1196,9 @@ export default function Barefoot() {
         <div>
           <h1>👣 Barefoot Tracker</h1>
           <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 4 }}>
-            Daily 60% · Splurge 10% · Smile 10% · Fire 20%
+            {data
+              ? `Daily ${data.settings.pct_daily}% · Splurge ${data.settings.pct_splurge}% · Smile ${data.settings.pct_smile}% · Fire ${data.settings.pct_fire}%`
+              : 'Daily 60% · Splurge 10% · Smile 10% · Fire 20%'}
           </div>
         </div>
         <div className="month-nav">
@@ -1119,7 +1220,7 @@ export default function Barefoot() {
         <>
           {tab === 'overview' && <OverviewTab data={data} year={year} month={month} onDataChange={load} />}
           {tab === 'fire' && <FireGoalsTab data={data} onRefresh={load} />}
-          {tab === 'income' && <IncomeTab />}
+          {tab === 'income' && <IncomeTab data={data} onDataChange={load} />}
         </>
       )}
     </div>

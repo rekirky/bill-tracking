@@ -325,12 +325,18 @@ def dashboard(year: int = None, month: int = None, db: Session = Depends(get_db)
     streams = db.query(models.BarefootIncomeStream).filter(models.BarefootIncomeStream.is_active == True).all()
     monthly_income = round(sum(s.amount * INCOME_TO_MONTHLY.get(s.frequency, 1.0) for s in streams), 2)
 
-    # Bucket targets
+    # Bucket targets — use user-configured ratios from settings
+    bucket_pcts = {
+        "daily":   (settings.pct_daily   or 60.0) / 100,
+        "splurge": (settings.pct_splurge or 10.0) / 100,
+        "smile":   (settings.pct_smile   or 10.0) / 100,
+        "fire":    (settings.pct_fire    or 20.0) / 100,
+    }
     targets = schemas.BarefootBucketTargets(
-        daily=round(monthly_income * BUCKET_PCTS["daily"], 2),
-        splurge=round(monthly_income * BUCKET_PCTS["splurge"], 2),
-        smile=round(monthly_income * BUCKET_PCTS["smile"], 2),
-        fire=round(monthly_income * BUCKET_PCTS["fire"], 2),
+        daily=round(monthly_income * bucket_pcts["daily"], 2),
+        splurge=round(monthly_income * bucket_pcts["splurge"], 2),
+        smile=round(monthly_income * bucket_pcts["smile"], 2),
+        fire=round(monthly_income * bucket_pcts["fire"], 2),
     )
 
     # This month deposits

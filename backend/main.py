@@ -23,6 +23,14 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE barefoot_fire_goals ADD COLUMN wealth_item_id INTEGER REFERENCES wealth_items(id)"))
         conn.commit()
 
+# Migrate: add bucket ratio columns to barefoot_settings if they don't exist
+with engine.connect() as conn:
+    existing = [row[1] for row in conn.execute(text("PRAGMA table_info(barefoot_settings)"))]
+    for col, default in [("pct_daily", 60.0), ("pct_splurge", 10.0), ("pct_smile", 10.0), ("pct_fire", 20.0)]:
+        if col not in existing:
+            conn.execute(text(f"ALTER TABLE barefoot_settings ADD COLUMN {col} REAL DEFAULT {default}"))
+    conn.commit()
+
 app = FastAPI(title="BillTracker API", version="1.0.0")
 
 app.add_middleware(
