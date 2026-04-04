@@ -431,4 +431,5 @@ class BarefootDashboard(BaseModel):
     smile_months_target: int
     smile_months_achieved: float
     monthly_bills_total: float
+    splurge_calculated: float
     settings: BarefootSettingsSchema

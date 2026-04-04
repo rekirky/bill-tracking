@@ -185,6 +185,77 @@ function BucketCard({ bucket, config, target, deposited, runningTotal, year, mon
   )
 }
 
+// ── Splurge Calculated Card ───────────────────────────────
+
+function SplurgeBucketCard({ data }) {
+  const config = BUCKETS.splurge
+  const splurge = data.splurge_calculated
+  const smileDeposited = data.this_month_deposits['smile'] ?? 0
+  const fireDeposited = data.this_month_deposits['fire'] ?? 0
+
+  return (
+    <div
+      className="bf-bucket-card"
+      style={{
+        '--bucket-color': config.color,
+        background: `color-mix(in srgb, ${config.color} 5%, var(--bg2))`,
+        border: `1px solid color-mix(in srgb, ${config.color} 25%, var(--border))`,
+      }}
+    >
+      <div className="bf-bucket-header">
+        <div className="bf-bucket-title">
+          <span className="bf-bucket-emoji">{config.emoji}</span>
+          <div>
+            <div className="bf-bucket-name">{config.label}</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
+          </div>
+        </div>
+        <span className="bf-bucket-pct">calculated</span>
+      </div>
+
+      <div style={{ margin: '12px 0', padding: '12px 14px', background: 'var(--bg3)', borderRadius: 8 }}>
+        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Current splurge
+        </div>
+        <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 28, color: splurge >= 0 ? config.color : '#ff5c5c', fontWeight: 700 }}>
+          {fmt(splurge)}
+        </div>
+      </div>
+
+      <div style={{ fontSize: 12, color: 'var(--text2)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ color: 'var(--text3)' }}>Monthly income</span>
+          <span className="mono">{fmt(data.monthly_income)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ color: 'var(--text3)' }}>− Bills</span>
+          <span className="mono" style={{ color: '#ff5c5c' }}>−{fmt(data.monthly_bills_total)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ color: 'var(--text3)' }}>− Smile deposited</span>
+          <span className="mono" style={{ color: smileDeposited > 0 ? '#ff5c5c' : 'var(--text3)' }}>
+            −{fmt(smileDeposited)}
+          </span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
+          <span style={{ color: 'var(--text3)' }}>− Fire deposited</span>
+          <span className="mono" style={{ color: fireDeposited > 0 ? '#ff5c5c' : 'var(--text3)' }}>
+            −{fmt(fireDeposited)}
+          </span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+          <span style={{ fontWeight: 600 }}>= Splurge remaining</span>
+          <span className="mono" style={{ fontWeight: 700, color: splurge >= 0 ? config.color : '#ff5c5c' }}>{fmt(splurge)}</span>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text3)', fontStyle: 'italic' }}>
+        Fills automatically as smile & fire buckets are deposited throughout the month.
+      </div>
+    </div>
+  )
+}
+
 // ── Smile Security Card ───────────────────────────────────
 
 function SmileSecurityCard({ data, onSettingsChange }) {
@@ -661,17 +732,19 @@ function OverviewTab({ data, year, month, onDataChange }) {
       {/* Bucket cards */}
       <div className="bf-bucket-grid">
         {Object.entries(BUCKETS).map(([key, config]) => (
-          <BucketCard
-            key={key}
-            bucket={key}
-            config={config}
-            target={data.targets[key]}
-            deposited={data.this_month_deposits[key] ?? null}
-            runningTotal={data.running_totals[key] ?? 0}
-            year={year}
-            month={month}
-            onSaved={onDataChange}
-          />
+          key === 'splurge'
+            ? <SplurgeBucketCard key={key} data={data} />
+            : <BucketCard
+                key={key}
+                bucket={key}
+                config={config}
+                target={data.targets[key]}
+                deposited={data.this_month_deposits[key] ?? null}
+                runningTotal={data.running_totals[key] ?? 0}
+                year={year}
+                month={month}
+                onSaved={onDataChange}
+              />
         ))}
       </div>
 

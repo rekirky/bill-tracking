@@ -368,6 +368,10 @@ def dashboard(year: int = None, month: int = None, db: Session = Depends(get_db)
     )
     smile_months_achieved = round(smile_balance / monthly_bills_total, 2) if monthly_bills_total > 0 else 0.0
 
+    smile_this_month = this_month_deposits.get("smile", 0.0)
+    fire_this_month = this_month_deposits.get("fire", 0.0)
+    splurge_calculated = round(monthly_income - monthly_bills_total - smile_this_month - fire_this_month, 2)
+
     return schemas.BarefootDashboard(
         year=year,
         month=month,
@@ -382,5 +386,6 @@ def dashboard(year: int = None, month: int = None, db: Session = Depends(get_db)
         smile_months_target=settings.smile_months_target,
         smile_months_achieved=smile_months_achieved,
         monthly_bills_total=monthly_bills_total,
+        splurge_calculated=splurge_calculated,
         settings=schemas.BarefootSettingsSchema.model_validate(settings),
     )
