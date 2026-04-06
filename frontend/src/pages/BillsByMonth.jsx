@@ -3,9 +3,10 @@ import { getBillsByMonth, createBill, updateBill, deleteBill } from '../api.js'
 import { fmt, fmtDate, progressClass, MONTHS, FREQ_LABELS } from '../utils.js'
 
 function exportCSV(bills, label) {
-  const headers = ['Bill', 'Payment Type', 'Due Date', 'Frequency', 'Amount', 'Aside', 'Outstanding', 'Status']
+  const headers = ['Bill', 'Account', 'Payment Type', 'Due Date', 'Frequency', 'Amount', 'Aside', 'Outstanding', 'Status']
   const rows = bills.map(b => [
     b.name,
+    b.account_name ?? '',
     b.payment_type,
     fmtDate(b.due_date),
     FREQ_LABELS[b.frequency],
@@ -153,6 +154,7 @@ export default function BillsByMonth() {
                   <thead>
                     <tr>
                       <th>Bill</th>
+                      <th>Account</th>
                       <th>Due</th>
                       <th>Frequency</th>
                       <th>Amount</th>
@@ -174,6 +176,7 @@ export default function BillsByMonth() {
                             <br />
                             <span className="text-muted" style={{ fontSize: 11 }}>{bill.payment_type}</span>
                           </td>
+                          <td className="muted" style={{ fontSize: 12 }}>{bill.account_name ?? '—'}</td>
                           <td className="muted">{fmtDate(bill.due_date)}</td>
                           <td><span className="badge badge-muted">{FREQ_LABELS[bill.frequency]}</span></td>
                           <td className="mono">{fmt(bill.estimated_amount)}</td>

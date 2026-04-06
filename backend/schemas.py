@@ -56,6 +56,7 @@ class Bill(BillBase):
     total_aside: float = 0.0
     outstanding: float = 0.0
     is_paid: bool = False
+    account_name: Optional[str] = None
     class Config:
         from_attributes = True
 

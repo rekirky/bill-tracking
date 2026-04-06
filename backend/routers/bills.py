@@ -9,13 +9,14 @@ router = APIRouter(prefix="/bills", tags=["bills"])
 
 
 def _enrich(bill: models.Bill) -> schemas.Bill:
-    """Attach computed total_aside, outstanding, and is_paid to a bill."""
+    """Attach computed total_aside, outstanding, is_paid, and account_name to a bill."""
     total_aside = sum(m.amount for m in bill.money_aside)
     outstanding = max(bill.estimated_amount - total_aside, 0)
     data = schemas.Bill.model_validate(bill)
     data.total_aside = total_aside
     data.outstanding = outstanding
     data.is_paid = len(bill.payments) > 0
+    data.account_name = bill.account.name if bill.account else None
     return data
 
 
