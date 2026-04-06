@@ -218,3 +218,14 @@ class BarefootFireAllocation(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     goal = relationship("BarefootFireGoal", back_populates="allocations")
+
+
+class BarefootDailyExpense(Base):
+    __tablename__ = "barefoot_daily_expenses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    description = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

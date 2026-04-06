@@ -6,6 +6,7 @@ import {
   getBarefootIncome, createBarefootIncome, updateBarefootIncome, deleteBarefootIncome,
   getFireGoals, createFireGoal, updateFireGoal, deleteFireGoal, celebrateFireGoal,
   createFireAllocation, deleteFireAllocation,
+  createDailyExpense, deleteDailyExpense,
   updateBarefootSettings,
   getLinkableLiabilities,
 } from '../api.js'
@@ -185,6 +186,157 @@ function BucketCard({ bucket, config, target, deposited, runningTotal, year, mon
           {saved ? '✓ Saved' : saving ? '…' : 'Save'}
         </button>
       </div>
+    </div>
+  )
+}
+
+// ── Daily Expenses Card ───────────────────────────────────
+
+function DailyBucketCard({ data, onSaved }) {
+  const config = BUCKETS.daily
+  const [desc, setDesc] = useState('')
+  const [amount, setAmount] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const target = data.targets.daily
+  const calculated = data.daily_calculated
+  const pct = target > 0 ? Math.min(100, (calculated / target) * 100) : 0
+  const displayPct = Math.round(pct)
+
+  async function handleAddExpense(e) {
+    e.preventDefault()
+    const amt = parseFloat(amount)
+    if (!desc.trim() || isNaN(amt) || amt <= 0) return
+    setSaving(true)
+    try {
+      await createDailyExpense({ year: data.year, month: data.month, description: desc.trim(), amount: amt })
+      setDesc('')
+      setAmount('')
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDeleteExpense(id) {
+    await deleteDailyExpense(id)
+    onSaved()
+  }
+
+  return (
+    <div
+      className="bf-bucket-card"
+      style={{
+        '--bucket-color': config.color,
+        background: `color-mix(in srgb, ${config.color} 5%, var(--bg2))`,
+        border: `1px solid color-mix(in srgb, ${config.color} 25%, var(--border))`,
+      }}
+    >
+      <div className="bf-bucket-header">
+        <div className="bf-bucket-title">
+          <span className="bf-bucket-emoji">{config.emoji}</span>
+          <div>
+            <div className="bf-bucket-name">{config.label}</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
+          </div>
+        </div>
+        <span className="bf-bucket-pct">{data.settings.pct_daily}%</span>
+      </div>
+
+      {/* Totals row */}
+      <div className="bf-bucket-amounts">
+        <div className="bf-bucket-amount-item">
+          <div className="bf-bucket-amount-label">Target / month</div>
+          <div className="bf-bucket-amount-value">{fmt(target)}</div>
+        </div>
+        <div className="bf-bucket-amount-item">
+          <div className="bf-bucket-amount-label">Bills paid</div>
+          <div className="bf-bucket-amount-value" style={{ color: config.color }}>
+            {fmt(data.bills_paid_this_month.reduce((s, b) => s + b.amount_paid, 0))}
+          </div>
+        </div>
+        <div className="bf-bucket-amount-item">
+          <div className="bf-bucket-amount-label">Once-off</div>
+          <div className="bf-bucket-amount-value" style={{ color: config.color }}>
+            {fmt(data.daily_expenses_this_month.reduce((s, e) => s + e.amount, 0))}
+          </div>
+        </div>
+        <div className="bf-bucket-amount-item">
+          <div className="bf-bucket-amount-label">{calculated >= target ? 'Over by' : 'To go'}</div>
+          <div className="bf-bucket-amount-value" style={{ color: calculated >= target ? '#2dd87a' : 'var(--amber)' }}>
+            {fmt(Math.abs(target - calculated))}
+          </div>
+        </div>
+      </div>
+
+      {/* Progress */}
+      <div className="bf-progress-track">
+        <div className="bf-progress-fill" style={{ width: `${displayPct}%` }} />
+      </div>
+      <div className="bf-progress-meta">
+        <span>{fmt(calculated)} spent</span>
+        <span>{fmt(target)} target · {displayPct}%</span>
+      </div>
+
+      {/* Bills paid this month */}
+      {data.bills_paid_this_month.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+            Bills paid this month
+          </div>
+          {data.bills_paid_this_month.map((b, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+              <span style={{ color: 'var(--text2)' }}>{b.bill_name}</span>
+              <span className="mono" style={{ color: config.color }}>{fmt(b.amount_paid)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Once-off expenses */}
+      {data.daily_expenses_this_month.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+            Once-off expenses
+          </div>
+          {data.daily_expenses_this_month.map(e => (
+            <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+              <span style={{ color: 'var(--text2)' }}>{e.description}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="mono" style={{ color: config.color }}>{fmt(e.amount)}</span>
+                <button
+                  className="btn btn-danger btn-sm"
+                  style={{ padding: '2px 6px', fontSize: 11 }}
+                  onClick={() => handleDeleteExpense(e.id)}
+                >✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add once-off expense */}
+      <form onSubmit={handleAddExpense} style={{ marginTop: 12, display: 'flex', gap: 6 }}>
+        <input
+          type="text"
+          placeholder="Description"
+          value={desc}
+          onChange={e => setDesc(e.target.value)}
+          style={{ flex: 2, fontSize: 12 }}
+        />
+        <input
+          type="number"
+          placeholder="$0"
+          step="0.01"
+          min="0.01"
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+          style={{ flex: 1, fontSize: 12 }}
+        />
+        <button type="submit" className="bf-save-btn" disabled={saving} style={{ '--bucket-color': config.color, whiteSpace: 'nowrap' }}>
+          {saving ? '…' : '+ Add'}
+        </button>
+      </form>
     </div>
   )
 }
@@ -736,7 +888,9 @@ function OverviewTab({ data, year, month, onDataChange }) {
       {/* Bucket cards */}
       <div className="bf-bucket-grid">
         {Object.entries(BUCKETS).map(([key, config]) => (
-          key === 'splurge'
+          key === 'daily'
+            ? <DailyBucketCard key={key} data={data} onSaved={onDataChange} />
+            : key === 'splurge'
             ? <SplurgeBucketCard key={key} data={data} />
             : <BucketCard
                 key={key}

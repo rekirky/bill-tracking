@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import extract
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas
@@ -309,6 +310,26 @@ def delete_allocation(allocation_id: int, db: Session = Depends(get_db)):
     db.commit()
 
 
+# ── Daily Expenses ────────────────────────────────────────
+
+@router.post("/daily-expenses/", response_model=schemas.BarefootDailyExpenseSchema, status_code=201)
+def create_daily_expense(payload: schemas.BarefootDailyExpenseCreate, db: Session = Depends(get_db)):
+    expense = models.BarefootDailyExpense(**payload.model_dump())
+    db.add(expense)
+    db.commit()
+    db.refresh(expense)
+    return expense
+
+
+@router.delete("/daily-expenses/{expense_id}", status_code=204)
+def delete_daily_expense(expense_id: int, db: Session = Depends(get_db)):
+    expense = db.query(models.BarefootDailyExpense).filter(models.BarefootDailyExpense.id == expense_id).first()
+    if not expense:
+        raise HTTPException(status_code=404, detail="Daily expense not found")
+    db.delete(expense)
+    db.commit()
+
+
 # ── Dashboard ─────────────────────────────────────────────
 
 @router.get("/dashboard/", response_model=schemas.BarefootDashboard)
@@ -378,6 +399,38 @@ def dashboard(year: int = None, month: int = None, db: Session = Depends(get_db)
     fire_this_month = this_month_deposits.get("fire", 0.0)
     splurge_calculated = round(monthly_income - monthly_bills_total - smile_this_month - fire_this_month, 2)
 
+    # Bills paid this month (payments with date_paid in this year/month)
+    payments_this_month = (
+        db.query(models.Payment)
+        .filter(
+            extract("year", models.Payment.date_paid) == year,
+            extract("month", models.Payment.date_paid) == month,
+        )
+        .all()
+    )
+    bills_paid_this_month = [
+        schemas.BarefootBillPaid(
+            bill_name=p.bill.name if p.bill else "Unknown",
+            amount_paid=p.amount_paid,
+            date_paid=p.date_paid,
+        )
+        for p in payments_this_month
+    ]
+    bills_paid_total = round(sum(p.amount_paid for p in payments_this_month), 2)
+
+    # Once-off daily expenses this month
+    daily_expenses = (
+        db.query(models.BarefootDailyExpense)
+        .filter(
+            models.BarefootDailyExpense.year == year,
+            models.BarefootDailyExpense.month == month,
+        )
+        .order_by(models.BarefootDailyExpense.created_at)
+        .all()
+    )
+    daily_expenses_total = round(sum(e.amount for e in daily_expenses), 2)
+    daily_calculated = round(bills_paid_total + daily_expenses_total, 2)
+
     return schemas.BarefootDashboard(
         year=year,
         month=month,
@@ -393,5 +446,8 @@ def dashboard(year: int = None, month: int = None, db: Session = Depends(get_db)
         smile_months_achieved=smile_months_achieved,
         monthly_bills_total=monthly_bills_total,
         splurge_calculated=splurge_calculated,
+        daily_calculated=daily_calculated,
+        bills_paid_this_month=bills_paid_this_month,
+        daily_expenses_this_month=[schemas.BarefootDailyExpenseSchema.model_validate(e) for e in daily_expenses],
         settings=schemas.BarefootSettingsSchema.model_validate(settings),
     )

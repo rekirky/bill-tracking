@@ -418,6 +418,30 @@ class LinkableLiability(BaseModel):
     tags: list
 
 
+# ── Barefoot Daily Expenses ───────────────────────────────
+
+class BarefootDailyExpenseCreate(BaseModel):
+    year: int
+    month: int
+    description: str
+    amount: float
+
+class BarefootDailyExpenseSchema(BaseModel):
+    id: int
+    year: int
+    month: int
+    description: str
+    amount: float
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class BarefootBillPaid(BaseModel):
+    bill_name: str
+    amount_paid: float
+    date_paid: date
+
+
 # ── Barefoot Dashboard ────────────────────────────────────
 
 class BarefootBucketTargets(BaseModel):
@@ -441,4 +465,7 @@ class BarefootDashboard(BaseModel):
     smile_months_achieved: float
     monthly_bills_total: float
     splurge_calculated: float
+    daily_calculated: float
+    bills_paid_this_month: list[BarefootBillPaid]
+    daily_expenses_this_month: list[BarefootDailyExpenseSchema]
     settings: BarefootSettingsSchema
