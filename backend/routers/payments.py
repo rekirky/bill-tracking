@@ -76,6 +76,9 @@ def record_payment(payload: schemas.PaymentCreate, db: Session = Depends(get_db)
     payment = models.Payment(**payload.model_dump(), next_due_date=ndd)
     db.add(payment)
 
+    # Clear money-aside entries for this bill — the money has now left the account
+    db.query(models.MoneyAside).filter(models.MoneyAside.bill_id == payload.bill_id).delete()
+
     _spawn_next(bill, payload.date_paid, db)
 
     db.commit()
