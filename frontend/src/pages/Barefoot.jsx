@@ -848,6 +848,107 @@ function FireGoalCard({ goal, onRefresh, onCelebrate }) {
   )
 }
 
+// ── Bonus Splitter ────────────────────────────────────────
+
+function BonusSplitter({ settings }) {
+  const [input, setInput] = useState('')
+  const [split, setSplit] = useState(null)
+
+  const bucketDefs = [
+    { key: 'daily',   label: 'Daily Expenses', emoji: '🏠', color: '#4f7cff', pctKey: 'pct_daily' },
+    { key: 'splurge', label: 'Splurge',         emoji: '🎉', color: '#f5a623', pctKey: 'pct_splurge' },
+    { key: 'smile',   label: 'Smile',           emoji: '😊', color: '#2dd87a', pctKey: 'pct_smile' },
+    { key: 'fire',    label: 'Fire Extinguisher',emoji: '🔥', color: '#ff5c5c', pctKey: 'pct_fire' },
+  ]
+
+  function calculate() {
+    const amt = parseFloat(input)
+    if (isNaN(amt) || amt <= 0) return
+    setSplit(bucketDefs.map(b => ({
+      ...b,
+      pct: settings[b.pctKey] ?? 0,
+      amount: Math.round(amt * ((settings[b.pctKey] ?? 0) / 100) * 100) / 100,
+    })))
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter') calculate()
+  }
+
+  function reset() {
+    setInput('')
+    setSplit(null)
+  }
+
+  return (
+    <div style={{
+      marginBottom: 28,
+      padding: '20px 24px',
+      background: 'var(--bg2)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>💸 Bonus Splitter</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+            Enter any amount to see how it splits across your buckets
+          </div>
+        </div>
+        {split && (
+          <button className="btn btn-ghost btn-sm" onClick={reset}>Reset</button>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: split ? 20 : 0 }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <span style={{
+            position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+            color: 'var(--text3)', fontSize: 14, pointerEvents: 'none',
+          }}>$</span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={input}
+            onChange={e => { setInput(e.target.value); setSplit(null) }}
+            onKeyDown={handleKey}
+            style={{ paddingLeft: 28, width: '100%' }}
+            autoFocus
+          />
+        </div>
+        <button className="btn btn-primary" onClick={calculate} disabled={!input || parseFloat(input) <= 0}>
+          Calculate split
+        </button>
+      </div>
+
+      {split && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          {split.map(b => (
+            <div key={b.key} style={{
+              padding: '14px 16px',
+              background: `color-mix(in srgb, ${b.color} 8%, var(--bg3))`,
+              border: `1px solid color-mix(in srgb, ${b.color} 25%, var(--border))`,
+              borderRadius: 10,
+            }}>
+              <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 6 }}>
+                {b.emoji} {b.label}
+              </div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 22, fontWeight: 700, color: b.color }}>
+                {fmt(b.amount)}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                {b.pct}% of {fmt(parseFloat(input))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Overview Tab ──────────────────────────────────────────
 
 function OverviewTab({ data, year, month, onDataChange }) {
@@ -906,6 +1007,9 @@ function OverviewTab({ data, year, month, onDataChange }) {
               />
         ))}
       </div>
+
+      {/* Bonus splitter */}
+      <BonusSplitter settings={data.settings} />
 
       {/* Smile security */}
       <SmileSecurityCard data={data} onSettingsChange={onDataChange} />
