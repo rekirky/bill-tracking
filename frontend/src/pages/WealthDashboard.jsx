@@ -40,6 +40,24 @@ function SummaryCard({ label, value, previous, color }) {
   )
 }
 
+function SparklineTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const { month, year, value } = payload[0].payload
+  return (
+    <div style={{
+      background: 'var(--bg2)',
+      border: '1px solid var(--border2)',
+      borderRadius: 6,
+      padding: '6px 10px',
+      fontSize: 11,
+      pointerEvents: 'none',
+    }}>
+      <div style={{ color: 'var(--text3)', marginBottom: 2 }}>{MONTH_ABBR[month]} {year}</div>
+      <div style={{ fontFamily: 'DM Mono, monospace', color: payload[0].stroke }}>{fmt(value)}</div>
+    </div>
+  )
+}
+
 function Sparkline({ data, color }) {
   if (!data || data.length < 2) return (
     <div style={{ height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -49,6 +67,7 @@ function Sparkline({ data, color }) {
   return (
     <ResponsiveContainer width="100%" height={50}>
       <LineChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+        <Tooltip content={<SparklineTooltip />} cursor={{ stroke: 'var(--border2)', strokeWidth: 1 }} />
         <Line
           type="monotone"
           dataKey="value"
