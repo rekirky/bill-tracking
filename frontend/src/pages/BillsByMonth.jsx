@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getBillsByMonth, createBill, updateBill, deleteBill } from '../api.js'
 import { fmt, fmtDate, progressClass, MONTHS, FREQ_LABELS } from '../utils.js'
 
@@ -23,6 +23,62 @@ function exportCSV(bills, label) {
   a.click()
   URL.revokeObjectURL(url)
 }
+const CONFETTI_COLORS = ['#4f7cff', '#2dd87a', '#f5a623', '#ff5c5c', '#a855f7', '#ec4899', '#fbbf24']
+
+function Confetti({ onDone }) {
+  const particles = useRef(
+    Array.from({ length: 70 }, (_, i) => ({
+      id: i,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      x: Math.random() * 100,
+      delay: Math.random() * 0.6,
+      dur: 1.2 + Math.random() * 0.8,
+      size: 6 + Math.random() * 8,
+      drift: (Math.random() - 0.5) * 120,
+      isCircle: Math.random() > 0.5,
+    }))
+  )
+
+  useEffect(() => {
+    const t = setTimeout(onDone, 3500)
+    return () => clearTimeout(t)
+  }, [onDone])
+
+  return (
+    <>
+      <style>{`
+        @keyframes confetti-fall {
+          0%   { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) translateX(var(--drift)) rotate(720deg); opacity: 0; }
+        }
+        .confetti-piece {
+          position: fixed;
+          top: 0;
+          pointer-events: none;
+          z-index: 9999;
+          animation: confetti-fall var(--dur) var(--delay) ease-in forwards;
+        }
+      `}</style>
+      {particles.current.map(p => (
+        <div
+          key={p.id}
+          className="confetti-piece"
+          style={{
+            left: `${p.x}%`,
+            width: p.size,
+            height: p.size,
+            background: p.color,
+            borderRadius: p.isCircle ? '50%' : '2px',
+            '--dur': `${p.dur}s`,
+            '--delay': `${p.delay}s`,
+            '--drift': `${p.drift}px`,
+          }}
+        />
+      ))}
+    </>
+  )
+}
+
 import BillForm from '../components/BillForm.jsx'
 import MoneyAsideForm from '../components/MoneyAsideForm.jsx'
 import PaymentForm from '../components/PaymentForm.jsx'
@@ -36,6 +92,7 @@ export default function BillsByMonth() {
   const [modal, setModal] = useState(null)
   const [selected, setSelected] = useState(null)
   const [filter, setFilter] = useState('all') // 'all' | 'paid' | 'unpaid'
+  const [showConfetti, setShowConfetti] = useState(false)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -74,6 +131,11 @@ export default function BillsByMonth() {
   }
 
   const allBills = data?.bills ?? []
+  const allPaid = allBills.length > 0 && allBills.every(b => b.is_paid)
+
+  useEffect(() => {
+    if (allPaid) setShowConfetti(true)
+  }, [allPaid])
   const bills = filter === 'paid'
     ? allBills.filter(b => b.is_paid)
     : filter === 'unpaid'
@@ -129,18 +191,36 @@ export default function BillsByMonth() {
         </div>
       )}
 
-      {/* Month progress bar */}
+      {/* Month progress bar / celebration */}
       {data && data.total_amount > 0 && (
-        <div className="card card-sm" style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12, color: 'var(--text2)' }}>
-            <span>Month coverage</span>
-            <span className="mono">{Math.round(totalPct)}% funded</span>
+        allPaid ? (
+          <div className="card card-sm" style={{
+            marginBottom: 24,
+            background: 'linear-gradient(135deg, rgba(45,216,122,0.12), rgba(79,124,255,0.08))',
+            border: '1px solid rgba(45,216,122,0.4)',
+            textAlign: 'center',
+            padding: '18px 24px',
+          }}>
+            <div style={{ fontSize: 28, marginBottom: 6 }}>🎉</div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--green)' }}>All Bills Paid!</div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4 }}>
+              Every bill for {MONTHS[month - 1]} {year} is taken care of. Nice work!
+            </div>
           </div>
-          <div className="progress-bar" style={{ height: 8 }}>
-            <div className={`progress-fill ${progressClass(totalPct)}`} style={{ width: `${totalPct}%` }} />
+        ) : (
+          <div className="card card-sm" style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12, color: 'var(--text2)' }}>
+              <span>Month coverage</span>
+              <span className="mono">{Math.round(totalPct)}% funded</span>
+            </div>
+            <div className="progress-bar" style={{ height: 8 }}>
+              <div className={`progress-fill ${progressClass(totalPct)}`} style={{ width: `${totalPct}%` }} />
+            </div>
           </div>
-        </div>
+        )
       )}
+
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
 
       {/* Bills table */}
       <div className="card" style={{ padding: 0 }}>
