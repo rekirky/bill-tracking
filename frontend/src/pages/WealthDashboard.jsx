@@ -17,15 +17,16 @@ function fmt(value) {
   }).format(value)
 }
 
-function fmtChange(current, previous) {
+function fmtChange(current, previous, invert = false) {
   if (previous == null || current == null) return null
   const diff = current - previous
   const sign = diff >= 0 ? '+' : ''
-  return { label: `${sign}${fmt(diff)}`, positive: diff >= 0 }
+  const positive = invert ? diff <= 0 : diff >= 0
+  return { label: `${sign}${fmt(diff)}`, positive }
 }
 
-function SummaryCard({ label, value, previous, color }) {
-  const change = fmtChange(value, previous)
+function SummaryCard({ label, value, previous, color, invert }) {
+  const change = fmtChange(value, previous, invert)
   return (
     <div className="wealth-stat-card">
       <div className="stat-label">{label}</div>
@@ -187,7 +188,6 @@ function ComparisonTable({ title, items, prevLabel, currLabel, isLiability }) {
 
 function NetWorthTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
-  const d = payload[0]?.payload
   return (
     <div style={{
       background: 'var(--bg2)',
@@ -252,6 +252,7 @@ export default function WealthDashboard() {
           value={data.current_liabilities}
           previous={data.previous_liabilities}
           color="red"
+          invert
         />
       </div>
 
