@@ -98,6 +98,10 @@ export const celebrateFireGoal = (id) => request('POST', `/barefoot/fire-goals/$
 export const createFireAllocation = (data) => request('POST', '/barefoot/fire-allocations/', data)
 export const deleteFireAllocation = (id) => request('DELETE', `/barefoot/fire-allocations/${id}`)
 
+// Barefoot — Bucket Transactions (Smile / Fire)
+export const createBucketTransaction = (data) => request('POST', '/barefoot/bucket-transactions/', data)
+export const deleteBucketTransaction = (id) => request('DELETE', `/barefoot/bucket-transactions/${id}`)
+
 // Barefoot — Daily Expenses
 export const createDailyExpense = (data) => request('POST', '/barefoot/daily-expenses/', data)
 export const deleteDailyExpense = (id) => request('DELETE', `/barefoot/daily-expenses/${id}`)

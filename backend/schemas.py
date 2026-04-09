@@ -418,6 +418,27 @@ class LinkableLiability(BaseModel):
     tags: list
 
 
+# ── Barefoot Bucket Transactions (Smile / Fire) ───────────
+
+class BarefootBucketTransactionCreate(BaseModel):
+    bucket: str  # "smile" or "fire"
+    year: int
+    month: int
+    amount: float  # can be negative
+    notes: Optional[str] = None
+
+class BarefootBucketTransactionSchema(BaseModel):
+    id: int
+    bucket: str
+    year: int
+    month: int
+    amount: float
+    notes: Optional[str]
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+
 # ── Barefoot Daily Expenses ───────────────────────────────
 
 class BarefootDailyExpenseCreate(BaseModel):
@@ -468,4 +489,6 @@ class BarefootDashboard(BaseModel):
     daily_calculated: float
     bills_paid_this_month: list[BarefootBillPaid]
     daily_expenses_this_month: list[BarefootDailyExpenseSchema]
+    smile_transactions_this_month: list[BarefootBucketTransactionSchema]
+    fire_transactions_this_month: list[BarefootBucketTransactionSchema]
     settings: BarefootSettingsSchema

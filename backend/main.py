@@ -23,6 +23,8 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE barefoot_fire_goals ADD COLUMN wealth_item_id INTEGER REFERENCES wealth_items(id)"))
         conn.commit()
 
+# barefoot_bucket_transactions table is created automatically by create_all (new table)
+
 # Migrate: add bucket ratio columns to barefoot_settings if they don't exist
 with engine.connect() as conn:
     existing = [row[1] for row in conn.execute(text("PRAGMA table_info(barefoot_settings)"))]

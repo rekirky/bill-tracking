@@ -206,6 +206,18 @@ class BarefootFireGoal(Base):
     linked_wealth_item = relationship("WealthItem", foreign_keys=[wealth_item_id])
 
 
+class BarefootBucketTransaction(Base):
+    __tablename__ = "barefoot_bucket_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bucket = Column(String, nullable=False)  # "smile" or "fire"
+    year = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    amount = Column(Float, nullable=False)  # can be negative
+    notes = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class BarefootFireAllocation(Base):
     __tablename__ = "barefoot_fire_allocations"
 

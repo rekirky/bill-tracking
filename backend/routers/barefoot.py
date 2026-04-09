@@ -310,6 +310,28 @@ def delete_allocation(allocation_id: int, db: Session = Depends(get_db)):
     db.commit()
 
 
+# ── Bucket Transactions (Smile / Fire) ───────────────────
+
+@router.post("/bucket-transactions/", response_model=schemas.BarefootBucketTransactionSchema, status_code=201)
+def create_bucket_transaction(payload: schemas.BarefootBucketTransactionCreate, db: Session = Depends(get_db)):
+    if payload.bucket not in ("smile", "fire"):
+        raise HTTPException(status_code=400, detail="bucket must be 'smile' or 'fire'")
+    txn = models.BarefootBucketTransaction(**payload.model_dump())
+    db.add(txn)
+    db.commit()
+    db.refresh(txn)
+    return txn
+
+
+@router.delete("/bucket-transactions/{txn_id}", status_code=204)
+def delete_bucket_transaction(txn_id: int, db: Session = Depends(get_db)):
+    txn = db.query(models.BarefootBucketTransaction).filter(models.BarefootBucketTransaction.id == txn_id).first()
+    if not txn:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    db.delete(txn)
+    db.commit()
+
+
 # ── Daily Expenses ────────────────────────────────────────
 
 @router.post("/daily-expenses/", response_model=schemas.BarefootDailyExpenseSchema, status_code=201)
@@ -360,19 +382,36 @@ def dashboard(year: int = None, month: int = None, db: Session = Depends(get_db)
         fire=round(monthly_income * bucket_pcts["fire"], 2),
     )
 
-    # This month deposits
+    # Smile & Fire: use transaction log (supports positive + negative entries)
+    all_txns = db.query(models.BarefootBucketTransaction).all()
+    smile_txns_this_month = [
+        t for t in all_txns if t.bucket == "smile" and t.year == year and t.month == month
+    ]
+    fire_txns_this_month = [
+        t for t in all_txns if t.bucket == "fire" and t.year == year and t.month == month
+    ]
+    smile_total_this_month = round(sum(t.amount for t in smile_txns_this_month), 2)
+    fire_total_this_month = round(sum(t.amount for t in fire_txns_this_month), 2)
+    smile_running_total = round(sum(t.amount for t in all_txns if t.bucket == "smile"), 2)
+    fire_running_total = round(sum(t.amount for t in all_txns if t.bucket == "fire"), 2)
+
+    # Daily & Splurge: still use BarefootMonthlyEntry (daily is calculated; splurge is calculated)
     this_month_entries = (
         db.query(models.BarefootMonthlyEntry)
         .filter(models.BarefootMonthlyEntry.year == year, models.BarefootMonthlyEntry.month == month)
         .all()
     )
     this_month_deposits = {e.bucket: e.amount for e in this_month_entries}
+    this_month_deposits["smile"] = smile_total_this_month
+    this_month_deposits["fire"] = fire_total_this_month
 
     # All-time running totals per bucket
     all_entries = db.query(models.BarefootMonthlyEntry).all()
     running_totals: dict[str, float] = {"daily": 0.0, "splurge": 0.0, "smile": 0.0, "fire": 0.0}
     for e in all_entries:
         running_totals[e.bucket] = running_totals.get(e.bucket, 0.0) + e.amount
+    running_totals["smile"] = smile_running_total
+    running_totals["fire"] = fire_running_total
 
     # Fire goals
     goals = db.query(models.BarefootFireGoal).order_by(
@@ -449,5 +488,7 @@ def dashboard(year: int = None, month: int = None, db: Session = Depends(get_db)
         daily_calculated=daily_calculated,
         bills_paid_this_month=bills_paid_this_month,
         daily_expenses_this_month=[schemas.BarefootDailyExpenseSchema.model_validate(e) for e in daily_expenses],
+        smile_transactions_this_month=[schemas.BarefootBucketTransactionSchema.model_validate(t) for t in smile_txns_this_month],
+        fire_transactions_this_month=[schemas.BarefootBucketTransactionSchema.model_validate(t) for t in fire_txns_this_month],
         settings=schemas.BarefootSettingsSchema.model_validate(settings),
     )
