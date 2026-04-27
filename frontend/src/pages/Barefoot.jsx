@@ -207,6 +207,7 @@ function DailyBucketCard({ data, onSaved }) {
   const calculated = data.daily_calculated
   const pct = target > 0 ? Math.min(100, (calculated / target) * 100) : 0
   const displayPct = Math.round(pct)
+  const actualRatioPct = data.monthly_income > 0 ? Math.round(calculated / data.monthly_income * 100) : null
 
   async function handleAddExpense(e) {
     e.preventDefault()
@@ -245,7 +246,12 @@ function DailyBucketCard({ data, onSaved }) {
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
           </div>
         </div>
-        <span className="bf-bucket-pct">{data.settings.pct_daily}%</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 700, color: config.color }}>
+            {actualRatioPct != null ? `${actualRatioPct}%` : '—'}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{data.settings.pct_daily}% goal</div>
+        </div>
       </div>
 
       {/* Totals row */}
@@ -375,6 +381,7 @@ function SplurgeBucketCard({ data }) {
   const splurge = data.splurge_calculated
   const smileDeposited = data.this_month_deposits['smile'] ?? 0
   const fireDeposited = data.this_month_deposits['fire'] ?? 0
+  const actualRatioPct = data.monthly_income > 0 ? Math.round(splurge / data.monthly_income * 100) : null
 
   return (
     <div
@@ -393,7 +400,12 @@ function SplurgeBucketCard({ data }) {
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
           </div>
         </div>
-        <span className="bf-bucket-pct">calculated</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 700, color: config.color }}>
+            {actualRatioPct != null ? `${actualRatioPct}%` : '—'}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{data.settings.pct_splurge}% goal</div>
+        </div>
       </div>
 
       <div style={{ margin: '12px 0', padding: '12px 14px', background: 'var(--bg3)', borderRadius: 8 }}>
@@ -877,7 +889,7 @@ function FireGoalCard({ goal, onRefresh, onCelebrate }) {
 
 // ── Transaction Bucket Card (Smile / Fire) ────────────────
 
-function TransactionBucketCard({ bucket, config, target, transactions, runningTotal, year, month, onSaved, pct: ratioPct }) {
+function TransactionBucketCard({ bucket, config, target, transactions, runningTotal, year, month, onSaved, pct: ratioPct, monthlyIncome }) {
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -887,6 +899,7 @@ function TransactionBucketCard({ bucket, config, target, transactions, runningTo
   const displayTotal = Math.round(monthTotal * 100) / 100
   const pct = target > 0 ? Math.min(100, (displayTotal / target) * 100) : 0
   const displayPct = Math.round(pct)
+  const actualRatioPct = monthlyIncome > 0 ? Math.round(displayTotal / monthlyIncome * 100) : null
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -925,7 +938,12 @@ function TransactionBucketCard({ bucket, config, target, transactions, runningTo
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
           </div>
         </div>
-        <span className="bf-bucket-pct">{ratioPct ?? config.pct}%</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 700, color: config.color }}>
+            {actualRatioPct != null ? `${actualRatioPct}%` : '—'}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{ratioPct ?? config.pct}% goal</div>
+        </div>
       </div>
 
       <div className="bf-bucket-amounts">
@@ -1185,6 +1203,7 @@ function OverviewTab({ data, year, month, onDataChange }) {
                 month={month}
                 onSaved={onDataChange}
                 pct={data.settings[`pct_${key}`]}
+                monthlyIncome={data.monthly_income}
               />
             : <BucketCard
                 key={key}
