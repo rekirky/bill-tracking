@@ -381,7 +381,11 @@ function SplurgeBucketCard({ data }) {
   const splurge = data.splurge_calculated
   const smileDeposited = data.this_month_deposits['smile'] ?? 0
   const fireDeposited = data.this_month_deposits['fire'] ?? 0
-  const actualRatioPct = data.monthly_income > 0 ? Math.round(splurge / data.monthly_income * 100) : null
+  const smileActual = data.smile_transactions_this_month.reduce((s, t) => s + t.amount, 0)
+  const fireActual = data.fire_transactions_this_month.reduce((s, t) => s + t.amount, 0)
+  const actualRatioPct = data.monthly_income > 0
+    ? Math.round((data.monthly_income - data.daily_calculated - smileActual - fireActual) / data.monthly_income * 100)
+    : null
 
   return (
     <div
