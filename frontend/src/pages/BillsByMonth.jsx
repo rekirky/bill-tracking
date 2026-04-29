@@ -176,7 +176,7 @@ export default function BillsByMonth() {
           </div>
           <div className="stat-card">
             <div className="stat-label">Total amount</div>
-            <div className="stat-value">{fmt(unpaidAmount)}</div>
+            <div className="stat-value">{fmt(bills.reduce((s, b) => s + b.estimated_amount, 0))}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Put aside</div>
