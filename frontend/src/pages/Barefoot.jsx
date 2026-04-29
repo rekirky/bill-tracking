@@ -193,16 +193,21 @@ function BucketCard({ bucket, config, target, deposited, runningTotal, year, mon
 
 // ── Daily Expenses Card ───────────────────────────────────
 
+const PREVIEW_COUNT = 5
+
 function DailyBucketCard({ data, onSaved }) {
   const config = BUCKETS.daily
   const [desc, setDesc] = useState('')
   const [amount, setAmount] = useState('')
   const [saving, setSaving] = useState(false)
+  const [billsExpanded, setBillsExpanded] = useState(false)
+  const [expensesExpanded, setExpensesExpanded] = useState(false)
 
   const target = data.targets.daily
   const calculated = data.daily_calculated
   const pct = target > 0 ? Math.min(100, (calculated / target) * 100) : 0
   const displayPct = Math.round(pct)
+  const actualRatioPct = data.monthly_income > 0 ? Math.round(calculated / data.monthly_income * 100) : null
 
   async function handleAddExpense(e) {
     e.preventDefault()
@@ -241,7 +246,12 @@ function DailyBucketCard({ data, onSaved }) {
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
           </div>
         </div>
-        <span className="bf-bucket-pct">{data.settings.pct_daily}%</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 700, color: config.color }}>
+            {actualRatioPct != null ? `${actualRatioPct}%` : '—'}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{data.settings.pct_daily}% goal</div>
+        </div>
       </div>
 
       {/* Totals row */}
@@ -282,10 +292,21 @@ function DailyBucketCard({ data, onSaved }) {
       {/* Bills paid this month */}
       {data.bills_paid_this_month.length > 0 && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-            Bills paid this month
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Bills paid this month
+            </div>
+            {data.bills_paid_this_month.length > PREVIEW_COUNT && (
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11, padding: '2px 8px' }}
+                onClick={() => setBillsExpanded(x => !x)}
+              >
+                {billsExpanded ? 'Show less' : `Show all (${data.bills_paid_this_month.length})`}
+              </button>
+            )}
           </div>
-          {data.bills_paid_this_month.map((b, i) => (
+          {(billsExpanded ? data.bills_paid_this_month : data.bills_paid_this_month.slice(-PREVIEW_COUNT)).map((b, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
               <span style={{ color: 'var(--text2)' }}>{b.bill_name}</span>
               <span className="mono" style={{ color: config.color }}>{fmt(b.amount_paid)}</span>
@@ -297,10 +318,21 @@ function DailyBucketCard({ data, onSaved }) {
       {/* Once-off expenses */}
       {data.daily_expenses_this_month.length > 0 && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-            Once-off expenses
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Once-off expenses
+            </div>
+            {data.daily_expenses_this_month.length > PREVIEW_COUNT && (
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11, padding: '2px 8px' }}
+                onClick={() => setExpensesExpanded(x => !x)}
+              >
+                {expensesExpanded ? 'Show less' : `Show all (${data.daily_expenses_this_month.length})`}
+              </button>
+            )}
           </div>
-          {data.daily_expenses_this_month.map(e => (
+          {(expensesExpanded ? data.daily_expenses_this_month : data.daily_expenses_this_month.slice(-PREVIEW_COUNT)).map(e => (
             <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
               <span style={{ color: 'var(--text2)' }}>{e.description}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -349,6 +381,11 @@ function SplurgeBucketCard({ data }) {
   const splurge = data.splurge_calculated
   const smileDeposited = data.this_month_deposits['smile'] ?? 0
   const fireDeposited = data.this_month_deposits['fire'] ?? 0
+  const smileActual = data.smile_transactions_this_month.reduce((s, t) => s + t.amount, 0)
+  const fireActual = data.fire_transactions_this_month.reduce((s, t) => s + t.amount, 0)
+  const actualRatioPct = data.monthly_income > 0
+    ? Math.round((data.monthly_income - data.daily_calculated - smileActual - fireActual) / data.monthly_income * 100)
+    : null
 
   return (
     <div
@@ -367,7 +404,12 @@ function SplurgeBucketCard({ data }) {
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
           </div>
         </div>
-        <span className="bf-bucket-pct">calculated</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 700, color: config.color }}>
+            {actualRatioPct != null ? `${actualRatioPct}%` : '—'}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{data.settings.pct_splurge}% goal</div>
+        </div>
       </div>
 
       <div style={{ margin: '12px 0', padding: '12px 14px', background: 'var(--bg3)', borderRadius: 8 }}>
@@ -851,15 +893,17 @@ function FireGoalCard({ goal, onRefresh, onCelebrate }) {
 
 // ── Transaction Bucket Card (Smile / Fire) ────────────────
 
-function TransactionBucketCard({ bucket, config, target, transactions, runningTotal, year, month, onSaved, pct: ratioPct }) {
+function TransactionBucketCard({ bucket, config, target, transactions, runningTotal, year, month, onSaved, pct: ratioPct, monthlyIncome }) {
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
+  const [txExpanded, setTxExpanded] = useState(false)
 
   const monthTotal = transactions.reduce((s, t) => s + t.amount, 0)
   const displayTotal = Math.round(monthTotal * 100) / 100
   const pct = target > 0 ? Math.min(100, (displayTotal / target) * 100) : 0
   const displayPct = Math.round(pct)
+  const actualRatioPct = monthlyIncome > 0 ? Math.round(displayTotal / monthlyIncome * 100) : null
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -898,7 +942,12 @@ function TransactionBucketCard({ bucket, config, target, transactions, runningTo
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{config.desc}</div>
           </div>
         </div>
-        <span className="bf-bucket-pct">{ratioPct ?? config.pct}%</span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 700, color: config.color }}>
+            {actualRatioPct != null ? `${actualRatioPct}%` : '—'}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{ratioPct ?? config.pct}% goal</div>
+        </div>
       </div>
 
       <div className="bf-bucket-amounts">
@@ -933,10 +982,21 @@ function TransactionBucketCard({ bucket, config, target, transactions, runningTo
       {/* Transaction log */}
       {transactions.length > 0 && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-            This month
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              This month
+            </div>
+            {transactions.length > PREVIEW_COUNT && (
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11, padding: '2px 8px' }}
+                onClick={() => setTxExpanded(x => !x)}
+              >
+                {txExpanded ? 'Show less' : `Show all (${transactions.length})`}
+              </button>
+            )}
           </div>
-          {transactions.map(t => (
+          {(txExpanded ? transactions : transactions.slice(-PREVIEW_COUNT)).map(t => (
             <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
               <span style={{ color: 'var(--text2)' }}>
                 {t.notes || (t.amount >= 0 ? 'Deposit' : 'Withdrawal')}
@@ -1147,6 +1207,7 @@ function OverviewTab({ data, year, month, onDataChange }) {
                 month={month}
                 onSaved={onDataChange}
                 pct={data.settings[`pct_${key}`]}
+                monthlyIncome={data.monthly_income}
               />
             : <BucketCard
                 key={key}
