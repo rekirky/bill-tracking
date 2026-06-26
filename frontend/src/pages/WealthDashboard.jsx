@@ -126,61 +126,99 @@ function PinnedCard({ item }) {
   )
 }
 
-function ComparisonTable({ title, items, prevLabel, currLabel, isLiability }) {
-  if (!items || items.length === 0) return null
+function ItemTrendPanel({ sparkline, color }) {
+  if (!sparkline || sparkline.length < 2) {
+    return (
+      <div className="wealth-trend-panel">
+        <span style={{ color: 'var(--text3)', fontSize: 12 }}>Not enough history to chart a trend yet</span>
+      </div>
+    )
+  }
+  return (
+    <div className="wealth-trend-panel">
+      <ResponsiveContainer width="100%" height={140}>
+        <LineChart data={sparkline} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          <XAxis
+            dataKey="month"
+            tickFormatter={m => MONTH_ABBR[m]}
+            tick={{ fill: 'var(--text3)', fontSize: 10 }}
+            tickLine={false}
+            axisLine={{ stroke: 'var(--border)' }}
+            interval="preserveStartEnd"
+          />
+          <YAxis hide domain={['auto', 'auto']} />
+          <Tooltip content={<SparklineTooltip />} cursor={{ stroke: 'var(--border2)', strokeWidth: 1 }} />
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke={color}
+            strokeWidth={2}
+            dot={{ r: 3, fill: color, strokeWidth: 0 }}
+            activeDot={{ r: 5 }}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function WealthItemRow({ item, isLiability }) {
+  const [hovering, setHovering] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const open = hovering || pinned
+
+  const curr = item.current_value
+  const prev = item.previous_value
+  const diff = curr != null && prev != null ? curr - prev : null
+  // For assets: up = green, down = red. For liabilities: down = green, up = red.
+  let changeColor = 'var(--text2)'
+  if (diff != null && diff !== 0) {
+    const isPositive = diff > 0
+    changeColor = (isPositive !== isLiability) ? 'var(--green)' : 'var(--red)'
+  }
+  const sign = diff != null && diff > 0 ? '+' : ''
+  const trendColor = isLiability ? '#ff5c5c' : '#2dd87a'
 
   return (
-    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
-        <h3>{title}</h3>
+    <div
+      className={`wealth-item-row${open ? ' open' : ''}`}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      onClick={() => setPinned(p => !p)}
+    >
+      <div className="wealth-item-row-top">
+        <div className="wealth-item-row-info">
+          <span className="wealth-item-row-name">{item.name}</span>
+          {item.tags.length > 0 && (
+            <div className="wealth-item-row-tags">
+              {item.tags.map(t => <TagPill key={t.id} tag={t} />)}
+            </div>
+          )}
+        </div>
+        <div className="wealth-item-row-values">
+          <div className="mono wealth-item-row-current">{curr != null ? fmt(curr) : '—'}</div>
+          <div className="mono" style={{ color: changeColor, fontSize: 12 }}>
+            {diff != null ? `${sign}${fmt(diff)}` : 'No previous data'}
+          </div>
+        </div>
       </div>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Tags</th>
-              <th style={{ textAlign: 'right' }}>{prevLabel || 'Previous'}</th>
-              <th style={{ textAlign: 'right' }}>{currLabel || 'Current'}</th>
-              <th style={{ textAlign: 'right' }}>Change</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(item => {
-              const curr = item.current_value
-              const prev = item.previous_value
-              const diff = curr != null && prev != null ? curr - prev : null
-              // For assets: up = green, down = red
-              // For liabilities: down = green, up = red
-              let changeColor = 'var(--text2)'
-              if (diff != null && diff !== 0) {
-                const isPositive = diff > 0
-                changeColor = (isPositive !== isLiability) ? 'var(--green)' : 'var(--red)'
-              }
-              const sign = diff != null && diff > 0 ? '+' : ''
+      {open && <ItemTrendPanel sparkline={item.sparkline} color={trendColor} />}
+    </div>
+  )
+}
 
-              return (
-                <tr key={item.id}>
-                  <td style={{ fontWeight: 500 }}>{item.name}</td>
-                  <td>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {item.tags.map(t => <TagPill key={t.id} tag={t} />)}
-                    </div>
-                  </td>
-                  <td className="mono text-right" style={{ color: 'var(--text2)' }}>
-                    {prev != null ? fmt(prev) : '—'}
-                  </td>
-                  <td className="mono text-right" style={{ color: changeColor }}>
-                    {curr != null ? fmt(curr) : '—'}
-                  </td>
-                  <td className="mono text-right" style={{ color: changeColor }}>
-                    {diff != null ? `${sign}${fmt(diff)}` : '—'}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+function WealthItemSection({ title, items, isLiability }) {
+  if (!items || items.length === 0) return null
+  return (
+    <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+        <h3>{title}</h3>
+        <span className="text-muted" style={{ fontSize: 11 }}>Hover or tap an item to see its trend</span>
+      </div>
+      <div className="wealth-item-list">
+        {items.map(item => <WealthItemRow key={item.id} item={item} isLiability={isLiability} />)}
       </div>
     </div>
   )
@@ -307,23 +345,11 @@ export default function WealthDashboard() {
         </div>
       )}
 
-      {/* Month-on-month comparison tables */}
+      {/* Month-on-month item lists */}
       {(data.asset_comparisons.length > 0 || data.liability_comparisons.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
-          <ComparisonTable
-            title="Assets"
-            items={data.asset_comparisons}
-            prevLabel={data.previous_month_label}
-            currLabel={data.current_month_label}
-            isLiability={false}
-          />
-          <ComparisonTable
-            title="Liabilities"
-            items={data.liability_comparisons}
-            prevLabel={data.previous_month_label}
-            currLabel={data.current_month_label}
-            isLiability={true}
-          />
+        <div style={{ marginBottom: 16 }}>
+          <WealthItemSection title="Assets" items={data.asset_comparisons} isLiability={false} />
+          <WealthItemSection title="Liabilities" items={data.liability_comparisons} isLiability={true} />
         </div>
       )}
 

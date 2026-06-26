@@ -260,6 +260,7 @@ class WealthItemComparison(BaseModel):
     tags: list[WealthTag]
     current_value: Optional[float]
     previous_value: Optional[float]
+    sparkline: list[WealthSparklinePoint]
 
 class WealthDashboard(BaseModel):
     current_assets: float

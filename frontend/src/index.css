@@ -423,6 +423,65 @@ select option { background: var(--bg2); }
   flex-shrink: 0;
 }
 
+.wealth-item-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.wealth-item-row {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.wealth-item-row:last-child { border-bottom: none; }
+.wealth-item-row:hover, .wealth-item-row.open { background: var(--bg3); }
+
+.wealth-item-row-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.wealth-item-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wealth-item-row-name {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.wealth-item-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.wealth-item-row-values {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.wealth-item-row-current {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.wealth-trend-panel {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
 /* Tag color swatches */
 .color-swatch-grid {
   display: flex;

@@ -237,6 +237,13 @@ def wealth_dashboard(db: Session = Depends(get_db)):
     curr_key = (current.year, current.month) if current else None
     prev_key = (previous.year, previous.month) if previous else None
 
+    def _sparkline_for(item_id: int) -> list[schemas.WealthSparklinePoint]:
+        item_snaps = sorted(
+            [s for s in all_snaps if s.wealth_item_id == item_id],
+            key=lambda s: (s.year, s.month),
+        )
+        return [schemas.WealthSparklinePoint(year=s.year, month=s.month, value=s.value) for s in item_snaps]
+
     asset_comparisons = []
     liability_comparisons = []
     for item in sorted(items, key=lambda i: i.name):
@@ -251,6 +258,7 @@ def wealth_dashboard(db: Session = Depends(get_db)):
             tags=[schemas.WealthTag(id=t.id, name=t.name, color=t.color) for t in item.tags],
             current_value=curr_val,
             previous_value=prev_val,
+            sparkline=_sparkline_for(item.id),
         )
         if item.type == "asset":
             asset_comparisons.append(comp)
