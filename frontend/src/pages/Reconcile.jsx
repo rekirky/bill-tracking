@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getAccounts, getReconciliations, getLiveTotal, createReconciliation, getMoneyAsideByAccount } from '../api.js'
+import { getAccounts, getReconciliations, getLiveTotal, createReconciliation, getMoneyAsideByAccount, deleteMoneyAside } from '../api.js'
 import { fmt } from '../utils.js'
 import Modal from '../components/Modal.jsx'
 
@@ -41,11 +41,12 @@ export default function Reconcile() {
     setShowBreakdown(false)
   }, [accountId, refreshLive, refreshBreakdown])
 
-  // Refresh live total whenever the user returns to this tab
+  // Refresh live total and breakdown whenever the user returns to this tab
   useEffect(() => {
-    window.addEventListener('focus', refreshLive)
-    return () => window.removeEventListener('focus', refreshLive)
-  }, [refreshLive])
+    const handler = () => { refreshLive(); refreshBreakdown() }
+    window.addEventListener('focus', handler)
+    return () => window.removeEventListener('focus', handler)
+  }, [refreshLive, refreshBreakdown])
 
   async function submit() {
     if (!form.bank_balance) { setError('Bank balance is required.'); return }
@@ -66,6 +67,12 @@ export default function Reconcile() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleDeleteEntry(id) {
+    await deleteMoneyAside(id)
+    refreshLive()
+    refreshBreakdown()
   }
 
   const latest = history[0]
@@ -143,6 +150,7 @@ export default function Reconcile() {
                           <th>Amount</th>
                           <th>Date</th>
                           <th>Notes</th>
+                          <th></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -152,6 +160,13 @@ export default function Reconcile() {
                             <td className="mono">{fmt(e.amount)}</td>
                             <td className="muted">{e.date_recorded}</td>
                             <td className="muted">{e.notes || '—'}</td>
+                            <td>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleDeleteEntry(e.id)}
+                                title="Remove this entry"
+                              >✕</button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
