@@ -98,6 +98,11 @@ class MoneyAside(MoneyAsideBase):
     class Config:
         from_attributes = True
 
+class MoneyAsideWithBill(MoneyAsideBase):
+    id: int
+    created_at: datetime
+    bill_name: str
+
 
 # ── Reconciliation ────────────────────────────────────────
 

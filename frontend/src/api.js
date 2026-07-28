@@ -42,6 +42,8 @@ export const deletePayment = (id) => request('DELETE', `/payments/${id}`)
 // Money aside
 export const getMoneyAside = (billId) =>
   request('GET', `/money-aside/${billId ? '?bill_id=' + billId : ''}`)
+export const getMoneyAsideByAccount = (accountId) =>
+  request('GET', `/money-aside/?account_id=${accountId}`)
 export const addMoneyAside = (data) => request('POST', '/money-aside/', data)
 export const deleteMoneyAside = (id) => request('DELETE', `/money-aside/${id}`)
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getAccounts, getReconciliations, getLiveTotal, createReconciliation } from '../api.js'
+import { getAccounts, getReconciliations, getLiveTotal, createReconciliation, getMoneyAsideByAccount } from '../api.js'
 import { fmt } from '../utils.js'
 import Modal from '../components/Modal.jsx'
 
@@ -12,6 +12,8 @@ export default function Reconcile() {
   const [form, setForm] = useState({ bank_balance: '', notes: '' })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [breakdown, setBreakdown] = useState(null)
+  const [showBreakdown, setShowBreakdown] = useState(false)
 
   useEffect(() => {
     getAccounts().then((accs) => {
@@ -26,11 +28,18 @@ export default function Reconcile() {
     getLiveTotal(accountId).then((r) => setLiveTotal(r.system_total))
   }, [accountId])
 
+  const refreshBreakdown = useCallback(() => {
+    if (!accountId) return
+    getMoneyAsideByAccount(accountId).then(setBreakdown)
+  }, [accountId])
+
   useEffect(() => {
     if (!accountId) return
     getReconciliations(accountId).then(setHistory)
     refreshLive()
-  }, [accountId, refreshLive])
+    refreshBreakdown()
+    setShowBreakdown(false)
+  }, [accountId, refreshLive, refreshBreakdown])
 
   // Refresh live total whenever the user returns to this tab
   useEffect(() => {
@@ -51,6 +60,7 @@ export default function Reconcile() {
       setForm({ bank_balance: '', notes: '' })
       getReconciliations(accountId).then(setHistory)
       refreshLive()
+      refreshBreakdown()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -110,6 +120,47 @@ export default function Reconcile() {
             <p className="text-red mt-16" style={{ fontSize: 13 }}>↓ Your bank has less than recorded — check for missing money aside entries.</p>
           )}
           {latest.notes && <p className="text-muted mt-8" style={{ fontSize: 12 }}>Note: {latest.notes}</p>}
+
+          {/* Breakdown toggle */}
+          {breakdown !== null && (
+            <div style={{ marginTop: 16 }}>
+              <button
+                className="btn btn-ghost"
+                style={{ fontSize: 12, padding: '4px 10px' }}
+                onClick={() => setShowBreakdown(v => !v)}
+              >
+                {showBreakdown ? '▲ Hide breakdown' : `▼ Show breakdown (${breakdown.length} entries)`}
+              </button>
+              {showBreakdown && (
+                breakdown.length === 0 ? (
+                  <p className="text-muted mt-8" style={{ fontSize: 13 }}>No money-aside entries for this account.</p>
+                ) : (
+                  <div className="table-wrap" style={{ marginTop: 12 }}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Bill</th>
+                          <th>Amount</th>
+                          <th>Date</th>
+                          <th>Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {breakdown.map((e) => (
+                          <tr key={e.id}>
+                            <td>{e.bill_name}</td>
+                            <td className="mono">{fmt(e.amount)}</td>
+                            <td className="muted">{e.date_recorded}</td>
+                            <td className="muted">{e.notes || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              )}
+            </div>
+          )}
         </div>
       )}
 
