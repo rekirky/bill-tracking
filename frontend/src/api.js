@@ -56,7 +56,13 @@ export const createReconciliation = (data) => request('POST', '/reconciliations/
 
 // Transactions
 export const getTransactions = (params = {}) => {
-  const q = new URLSearchParams(params).toString()
+  const qs = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value == null || value === '') return
+    if (Array.isArray(value)) value.forEach((v) => qs.append(key, v))
+    else qs.append(key, value)
+  })
+  const q = qs.toString()
   return request('GET', `/transactions/${q ? '?' + q : ''}`)
 }
 export const setTransactionTags = (id, data) => request('PATCH', `/transactions/${id}/tags`, data)

@@ -1,7 +1,7 @@
 import hashlib
 from datetime import date
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -172,7 +172,7 @@ def import_commit(payload: schemas.ImportCommitRequest, db: Session = Depends(ge
 
 @router.get("/", response_model=list[schemas.Transaction])
 def list_transactions(
-    account_id: int | None = None,
+    account_id: list[int] | None = Query(default=None),
     tag_id: int | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
@@ -180,7 +180,7 @@ def list_transactions(
 ):
     q = db.query(models.Transaction)
     if account_id:
-        q = q.filter(models.Transaction.account_id == account_id)
+        q = q.filter(models.Transaction.account_id.in_(account_id))
     if date_from:
         q = q.filter(models.Transaction.date >= date_from)
     if date_to:

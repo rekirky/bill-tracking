@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   getAccounts, getTransactions, getTransactionTags,
   setTransactionTags, bulkTagTransactions, bulkDeleteTransactions, deleteTransaction,
@@ -10,25 +10,43 @@ export default function Transactions() {
   const [accounts, setAccounts] = useState([])
   const [allTags, setAllTags] = useState([])
   const [txns, setTxns] = useState([])
-  const [accountId, setAccountId] = useState('')
+  const [accountIds, setAccountIds] = useState([])
+  const [acctOpen, setAcctOpen] = useState(false)
   const [tagId, setTagId] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(new Set())
   const [bulkTags, setBulkTags] = useState([])
   const [loading, setLoading] = useState(false)
+  const acctRef = useRef(null)
 
   const loadTags = () => getTransactionTags().then(setAllTags)
 
   const loadTxns = useCallback(() => {
     setLoading(true)
     const params = {}
-    if (accountId) params.account_id = accountId
+    if (accountIds.length) params.account_id = accountIds
     if (tagId) params.tag_id = tagId
+    if (dateFrom) params.date_from = dateFrom
+    if (dateTo) params.date_to = dateTo
     return getTransactions(params).then(setTxns).finally(() => setLoading(false))
-  }, [accountId, tagId])
+  }, [accountIds, tagId, dateFrom, dateTo])
 
   useEffect(() => { getAccounts().then(setAccounts); loadTags() }, [])
   useEffect(() => { loadTxns() }, [loadTxns])
+
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (acctRef.current && !acctRef.current.contains(e.target)) setAcctOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  function toggleAccount(id) {
+    setAccountIds(ids => ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id])
+  }
 
   const visible = txns.filter(t =>
     !search || t.description.toLowerCase().includes(search.toLowerCase())
@@ -91,11 +109,22 @@ export default function Transactions() {
       <div className="card">
         <div className="form-grid form-grid-3">
           <div className="field">
-            <label>Account</label>
-            <select value={accountId} onChange={e => setAccountId(e.target.value)}>
-              <option value="">All accounts</option>
-              {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
+            <label>Accounts</label>
+            <div className="multiselect" ref={acctRef}>
+              <button type="button" className="multiselect-trigger" onClick={() => setAcctOpen(o => !o)}>
+                {accountIds.length === 0 ? 'All accounts' : `${accountIds.length} account${accountIds.length === 1 ? '' : 's'} selected`}
+              </button>
+              {acctOpen && (
+                <div className="tag-picker-dropdown" style={{ minWidth: 200 }}>
+                  {accounts.map(a => (
+                    <label key={a.id} className="tag-picker-option" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input type="checkbox" checked={accountIds.includes(a.id)} onChange={() => toggleAccount(a.id)} />
+                      {a.name}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="field">
             <label>Tag</label>
@@ -107,6 +136,14 @@ export default function Transactions() {
           <div className="field">
             <label>Search description</label>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="e.g. KFC" />
+          </div>
+          <div className="field">
+            <label>From date</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>To date</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
           </div>
         </div>
       </div>
