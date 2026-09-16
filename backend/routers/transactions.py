@@ -168,6 +168,43 @@ def import_commit(payload: schemas.ImportCommitRequest, db: Session = Depends(ge
     return schemas.ImportCommitResult(imported=imported, skipped_duplicates=skipped)
 
 
+# ── Visualisations ────────────────────────────────────────
+
+@router.get("/spend-over-time", response_model=schemas.SpendOverTimeResult)
+def spend_over_time(
+    account_id: list[int] | None = Query(default=None),
+    tag_id: list[int] | None = Query(default=None),
+    date_from: date | None = None,
+    date_to: date | None = None,
+    db: Session = Depends(get_db),
+):
+    q = db.query(models.Transaction).filter(models.Transaction.amount < 0)
+    if account_id:
+        q = q.filter(models.Transaction.account_id.in_(account_id))
+    if date_from:
+        q = q.filter(models.Transaction.date >= date_from)
+    if date_to:
+        q = q.filter(models.Transaction.date <= date_to)
+    if tag_id:
+        q = q.join(models.Transaction.tags).filter(models.TransactionTag.id.in_(tag_id)).distinct()
+    txns = q.all()
+
+    if not txns:
+        return schemas.SpendOverTimeResult(granularity="day", points=[])
+
+    dates = [t.date for t in txns]
+    span_days = (max(dates) - min(dates)).days
+    granularity = "day" if span_days <= 62 else "month"
+
+    buckets: dict[str, float] = {}
+    for t in txns:
+        key = t.date.isoformat() if granularity == "day" else f"{t.date.year:04d}-{t.date.month:02d}-01"
+        buckets[key] = buckets.get(key, 0.0) + abs(t.amount)
+
+    points = [schemas.SpendOverTimePoint(period=k, amount=round(v, 2)) for k, v in sorted(buckets.items())]
+    return schemas.SpendOverTimeResult(granularity=granularity, points=points)
+
+
 # ── List / tagging ────────────────────────────────────────
 
 @router.get("/", response_model=list[schemas.Transaction])

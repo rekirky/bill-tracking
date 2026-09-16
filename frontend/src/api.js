@@ -14,6 +14,18 @@ async function request(method, path, body) {
   return res.json()
 }
 
+// Builds a query string, expanding array values into repeated keys (?k=1&k=2)
+function buildQuery(params = {}) {
+  const qs = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value == null || value === '') return
+    if (Array.isArray(value)) value.forEach((v) => qs.append(key, v))
+    else qs.append(key, value)
+  })
+  const s = qs.toString()
+  return s ? '?' + s : ''
+}
+
 // Accounts
 export const getAccounts = () => request('GET', '/accounts/')
 export const createAccount = (data) => request('POST', '/accounts/', data)
@@ -55,16 +67,7 @@ export const getLiveTotal = (accountId) =>
 export const createReconciliation = (data) => request('POST', '/reconciliations/', data)
 
 // Transactions
-export const getTransactions = (params = {}) => {
-  const qs = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value == null || value === '') return
-    if (Array.isArray(value)) value.forEach((v) => qs.append(key, v))
-    else qs.append(key, value)
-  })
-  const q = qs.toString()
-  return request('GET', `/transactions/${q ? '?' + q : ''}`)
-}
+export const getTransactions = (params = {}) => request('GET', `/transactions/${buildQuery(params)}`)
 export const setTransactionTags = (id, data) => request('PATCH', `/transactions/${id}/tags`, data)
 export const bulkTagTransactions = (data) => request('POST', '/transactions/bulk-tag', data)
 export const bulkDeleteTransactions = (data) => request('POST', '/transactions/bulk-delete', data)
@@ -91,6 +94,9 @@ export async function previewImport(accountId, format, file) {
   return res.json()
 }
 export const commitImport = (data) => request('POST', '/transactions/import/commit', data)
+
+// Transaction — Spend over time
+export const getSpendOverTime = (params = {}) => request('GET', `/transactions/spend-over-time${buildQuery(params)}`)
 
 // Wealth — Tags
 export const getWealthTags = () => request('GET', '/wealth/tags/')

@@ -203,6 +203,17 @@ class ImportCommitResult(BaseModel):
     skipped_duplicates: int
 
 
+# ── Spend Over Time ────────────────────────────────────────
+
+class SpendOverTimePoint(BaseModel):
+    period: str  # ISO date; either a day or the 1st of a month, per `granularity`
+    amount: float
+
+class SpendOverTimeResult(BaseModel):
+    granularity: str  # "day" or "month"
+    points: list[SpendOverTimePoint]
+
+
 # ── Dashboard ─────────────────────────────────────────────
 
 class DashboardSummary(BaseModel):
