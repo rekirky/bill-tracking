@@ -482,6 +482,59 @@ select option { background: var(--bg2); }
   border-top: 1px solid var(--border);
 }
 
+/* Quick transaction tag picker */
+.tag-picker { position: relative; }
+
+.tag-picker-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  cursor: text;
+}
+
+.tag-picker-pills:hover { background: var(--bg3); }
+
+.tag-picker-input {
+  border: none !important;
+  background: none !important;
+  padding: 2px !important;
+  font-size: 12px;
+  width: 60px;
+  min-width: 40px;
+  flex: 1 1 auto;
+}
+
+.tag-picker-input:focus { outline: none; }
+
+.tag-picker-dropdown {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  min-width: 160px;
+  max-width: 260px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  padding: 6px;
+}
+
+.tag-picker-option {
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.tag-picker-option:hover { background: var(--bg3); color: var(--text); }
+
 /* Tag color swatches */
 .color-swatch-grid {
   display: flex;

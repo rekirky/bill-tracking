@@ -4,7 +4,7 @@ from sqlalchemy import text
 from database import engine, Base
 import models  # noqa: F401 — ensures all models are registered before create_all
 
-from routers import accounts, bills, payments, money_aside, reconciliation, wealth, barefoot
+from routers import accounts, bills, payments, money_aside, reconciliation, wealth, barefoot, transactions
 
 # Create all tables on startup
 Base.metadata.create_all(bind=engine)
@@ -50,6 +50,7 @@ app.include_router(money_aside.router)
 app.include_router(reconciliation.router)
 app.include_router(wealth.router)
 app.include_router(barefoot.router)
+app.include_router(transactions.router)
 
 
 @app.get("/health")

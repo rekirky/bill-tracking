@@ -123,6 +123,83 @@ class Reconciliation(BaseModel):
         from_attributes = True
 
 
+# ── Transaction Tags ──────────────────────────────────────
+
+class TransactionTagBase(BaseModel):
+    name: str
+    color: str = "#4f7cff"
+
+class TransactionTagCreate(TransactionTagBase):
+    pass
+
+class TransactionTagUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+
+class TransactionTag(TransactionTagBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+
+# ── Transactions ──────────────────────────────────────────
+
+class Transaction(BaseModel):
+    id: int
+    account_id: int
+    date: date
+    description: str
+    amount: float
+    balance: Optional[float] = None
+    source: str
+    created_at: datetime
+    tags: list[TransactionTag] = []
+    class Config:
+        from_attributes = True
+
+class TransactionTagsUpdate(BaseModel):
+    tag_ids: list[int] = []
+    tag_names: list[str] = []  # unknown names are auto-created
+
+class TransactionBulkTag(BaseModel):
+    transaction_ids: list[int]
+    tag_ids: list[int] = []
+    tag_names: list[str] = []
+
+
+# ── Transaction Import ────────────────────────────────────
+
+class ImportPreviewRow(BaseModel):
+    row_index: int
+    date: date
+    description: str
+    amount: float
+    balance: Optional[float] = None
+    is_duplicate: bool
+
+class ImportPreviewResult(BaseModel):
+    format: str
+    account_id: int
+    rows: list[ImportPreviewRow]
+    duplicate_count: int
+    new_count: int
+
+class ImportCommitRow(BaseModel):
+    date: date
+    description: str
+    amount: float
+    balance: Optional[float] = None
+
+class ImportCommitRequest(BaseModel):
+    account_id: int
+    format: str
+    rows: list[ImportCommitRow]
+
+class ImportCommitResult(BaseModel):
+    imported: int
+    skipped_duplicates: int
+
+
 # ── Dashboard ─────────────────────────────────────────────
 
 class DashboardSummary(BaseModel):

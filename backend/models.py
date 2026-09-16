@@ -29,6 +29,7 @@ class Account(Base):
     bills = relationship("Bill", back_populates="account")
     money_aside_entries = relationship("MoneyAside", back_populates="account")
     reconciliations = relationship("Reconciliation", back_populates="account")
+    transactions = relationship("Transaction", back_populates="account")
 
 
 class Bill(Base):
@@ -92,6 +93,47 @@ class Reconciliation(Base):
     checked_at = Column(DateTime, default=datetime.utcnow)
 
     account = relationship("Account", back_populates="reconciliations")
+
+
+# ── Transactions ──────────────────────────────────────────
+
+transaction_tag_links = Table(
+    "transaction_tag_links",
+    Base.metadata,
+    Column("transaction_id", Integer, ForeignKey("transactions.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("transaction_tags.id"), primary_key=True),
+)
+
+
+class TransactionTag(Base):
+    __tablename__ = "transaction_tags"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)
+    color = Column(String, nullable=False, default="#4f7cff")
+
+    transactions = relationship("Transaction", secondary="transaction_tag_links", back_populates="tags")
+
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
+    date = Column(Date, nullable=False)
+    description = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    balance = Column(Float, nullable=True)
+    source = Column(String, nullable=False)  # bank format used at import, e.g. "commbank"
+    dedupe_hash = Column(String, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    account = relationship("Account", back_populates="transactions")
+    tags = relationship("TransactionTag", secondary="transaction_tag_links", back_populates="transactions")
+
+    __table_args__ = (
+        UniqueConstraint("account_id", "dedupe_hash", name="uq_txn_account_hash"),
+    )
 
 
 # ── Wealth Tracking ───────────────────────────────────────

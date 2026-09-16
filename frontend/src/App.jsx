@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard.jsx'
 import BillsByMonth from './pages/BillsByMonth.jsx'
 import Accounts from './pages/Accounts.jsx'
 import Reconcile from './pages/Reconcile.jsx'
+import Transactions from './pages/Transactions.jsx'
+import Import from './pages/Import.jsx'
 import WealthDashboard from './pages/WealthDashboard.jsx'
 import WealthItems from './pages/WealthItems.jsx'
 import Barefoot from './pages/Barefoot.jsx'
@@ -35,6 +37,14 @@ function Sidebar({ open, onClose }) {
         </NavLink>
         <NavLink to="/accounts" className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')} onClick={onClose}>
           <span className="nav-icon">◎</span> Accounts
+        </NavLink>
+
+        <NavSection label="Transactions" />
+        <NavLink to="/transactions" className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')} onClick={onClose}>
+          <span className="nav-icon">☰</span> Transactions
+        </NavLink>
+        <NavLink to="/transactions/import" className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')} onClick={onClose}>
+          <span className="nav-icon">⇪</span> Import
         </NavLink>
 
         <NavSection label="Asset Tracking" />
@@ -72,6 +82,8 @@ export default function App() {
               <Route path="/bills" element={<BillsByMonth />} />
               <Route path="/reconcile" element={<Reconcile />} />
               <Route path="/accounts" element={<Accounts />} />
+              <Route path="/transactions" element={<Transactions />} />
+              <Route path="/transactions/import" element={<Import />} />
               <Route path="/wealth" element={<WealthDashboard />} />
               <Route path="/wealth/items" element={<WealthItems />} />
               <Route path="/barefoot" element={<Barefoot />} />

@@ -54,6 +54,37 @@ export const getLiveTotal = (accountId) =>
   request('GET', `/reconciliations/live-total?account_id=${accountId}`)
 export const createReconciliation = (data) => request('POST', '/reconciliations/', data)
 
+// Transactions
+export const getTransactions = (params = {}) => {
+  const q = new URLSearchParams(params).toString()
+  return request('GET', `/transactions/${q ? '?' + q : ''}`)
+}
+export const setTransactionTags = (id, data) => request('PATCH', `/transactions/${id}/tags`, data)
+export const bulkTagTransactions = (data) => request('POST', '/transactions/bulk-tag', data)
+export const deleteTransaction = (id) => request('DELETE', `/transactions/${id}`)
+
+// Transaction — Tags
+export const getTransactionTags = () => request('GET', '/transactions/tags/')
+export const createTransactionTag = (data) => request('POST', '/transactions/tags/', data)
+export const updateTransactionTag = (id, data) => request('PATCH', `/transactions/tags/${id}`, data)
+export const deleteTransactionTag = (id) => request('DELETE', `/transactions/tags/${id}`)
+
+// Transaction — Import
+export const getImportFormats = () => request('GET', '/transactions/import/formats')
+export async function previewImport(accountId, format, file) {
+  const fd = new FormData()
+  fd.append('account_id', accountId)
+  fd.append('format', format)
+  fd.append('file', file)
+  const res = await fetch(`${BASE}/transactions/import/preview`, { method: 'POST', body: fd })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    throw new Error(err.detail || 'Request failed')
+  }
+  return res.json()
+}
+export const commitImport = (data) => request('POST', '/transactions/import/commit', data)
+
 // Wealth — Tags
 export const getWealthTags = () => request('GET', '/wealth/tags/')
 export const createWealthTag = (data) => request('POST', '/wealth/tags/', data)
