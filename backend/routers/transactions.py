@@ -222,3 +222,13 @@ def delete_transaction(txn_id: int, db: Session = Depends(get_db)):
     txn.tags = []
     db.delete(txn)
     db.commit()
+
+
+@router.post("/bulk-delete")
+def bulk_delete(payload: schemas.TransactionBulkDelete, db: Session = Depends(get_db)):
+    txns = db.query(models.Transaction).filter(models.Transaction.id.in_(payload.transaction_ids)).all()
+    for txn in txns:
+        txn.tags = []
+        db.delete(txn)
+    db.commit()
+    return {"deleted": len(txns)}

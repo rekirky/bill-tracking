@@ -166,6 +166,9 @@ class TransactionBulkTag(BaseModel):
     tag_ids: list[int] = []
     tag_names: list[str] = []
 
+class TransactionBulkDelete(BaseModel):
+    transaction_ids: list[int]
+
 
 # ── Transaction Import ────────────────────────────────────
 

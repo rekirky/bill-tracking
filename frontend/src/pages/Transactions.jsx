@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   getAccounts, getTransactions, getTransactionTags,
-  setTransactionTags, bulkTagTransactions, deleteTransaction,
+  setTransactionTags, bulkTagTransactions, bulkDeleteTransactions, deleteTransaction,
 } from '../api.js'
 import { fmt, fmtDate } from '../utils.js'
 import TagPicker from '../components/TagPicker.jsx'
@@ -65,6 +65,14 @@ export default function Transactions() {
     loadTxns()
   }
 
+  async function handleBulkDelete() {
+    if (selected.size === 0) return
+    if (!confirm(`Delete ${selected.size} transaction${selected.size === 1 ? '' : 's'}? This can't be undone.`)) return
+    await bulkDeleteTransactions({ transaction_ids: [...selected] })
+    setSelected(new Set())
+    loadTxns()
+  }
+
   async function handleDelete(txn) {
     if (!confirm(`Delete this transaction? "${txn.description}"`)) return
     await deleteTransaction(txn.id)
@@ -112,6 +120,7 @@ export default function Transactions() {
           <button className="btn btn-primary btn-sm" onClick={applyBulkTags} disabled={bulkTags.length === 0}>
             Apply tags
           </button>
+          <button className="btn btn-danger btn-sm" onClick={handleBulkDelete}>Delete selected</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setSelected(new Set())}>Clear selection</button>
         </div>
       )}

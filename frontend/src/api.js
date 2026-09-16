@@ -61,6 +61,7 @@ export const getTransactions = (params = {}) => {
 }
 export const setTransactionTags = (id, data) => request('PATCH', `/transactions/${id}/tags`, data)
 export const bulkTagTransactions = (data) => request('POST', '/transactions/bulk-tag', data)
+export const bulkDeleteTransactions = (data) => request('POST', '/transactions/bulk-delete', data)
 export const deleteTransaction = (id) => request('DELETE', `/transactions/${id}`)
 
 // Transaction — Tags
