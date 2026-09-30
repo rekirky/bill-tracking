@@ -10,6 +10,7 @@ from database import Base
 
 class Frequency(str, enum.Enum):
     once = "once"
+    weekly = "weekly"
     fortnightly = "fortnightly"
     monthly = "monthly"
     quarterly = "quarterly"
@@ -59,6 +60,7 @@ class Payment(Base):
     bill_id = Column(Integer, ForeignKey("bills.id"), nullable=False)
     amount_paid = Column(Float, nullable=False)
     date_paid = Column(Date, nullable=False)
+    is_part_payment = Column(Boolean, nullable=False, default=False)
     next_due_date = Column(Date, nullable=True)
     notes = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

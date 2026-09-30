@@ -55,6 +55,7 @@ class Bill(BillBase):
     created_at: datetime
     total_aside: float = 0.0
     outstanding: float = 0.0
+    amount_paid: float = 0.0
     is_paid: bool = False
     account_name: Optional[str] = None
     class Config:
@@ -67,6 +68,7 @@ class PaymentBase(BaseModel):
     bill_id: int
     amount_paid: float
     date_paid: date
+    is_part_payment: bool = False
     notes: Optional[str] = None
 
 class PaymentCreate(PaymentBase):

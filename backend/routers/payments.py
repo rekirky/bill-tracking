@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import extract
+from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 from database import get_db
 from utils import next_due_date
@@ -8,13 +8,14 @@ import models, schemas
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
-SHORT_CYCLE = {Frequency.fortnightly}
+SHORT_CYCLE = {Frequency.weekly, Frequency.fortnightly}
+EPSILON = 0.005
 
 
-def _make_bill(bill, due_date):
+def _make_bill(bill, due_date, amount):
     return models.Bill(
         name=bill.name,
-        estimated_amount=bill.estimated_amount,
+        estimated_amount=amount,
         due_date=due_date,
         payment_type=bill.payment_type,
         account_id=bill.account_id,
@@ -25,8 +26,13 @@ def _make_bill(bill, due_date):
     )
 
 
-def _spawn_next(bill, payment_date, db):
-    """Create the next bill instance(s) after a payment."""
+def _spawn_next(bill, payment_date, db, next_amount):
+    """Create the next bill instance(s) after the bill is fully settled.
+
+    `next_amount` carries forward as the new bill's estimated amount: the
+    original estimate after a part payment finally covers it in full, or the
+    amount actually paid when a single (non-part) payment settles it.
+    """
     ndd = next_due_date(payment_date, bill.frequency)
     if ndd is None:
         return  # once-off
@@ -41,6 +47,7 @@ def _spawn_next(bill, payment_date, db):
             db.query(models.Bill)
             .filter(
                 models.Bill.series_id == series_id,
+                models.Bill.id != bill.id,
                 extract("year", models.Bill.due_date) == target_year,
                 extract("month", models.Bill.due_date) == target_month,
             )
@@ -51,11 +58,11 @@ def _spawn_next(bill, payment_date, db):
 
         current = ndd
         while current.month == target_month and current.year == target_year:
-            db.add(_make_bill(bill, current))
+            db.add(_make_bill(bill, current, next_amount))
             current = next_due_date(current, bill.frequency)
     else:
         # Monthly, quarterly, etc. — one next bill
-        db.add(_make_bill(bill, ndd))
+        db.add(_make_bill(bill, ndd, next_amount))
 
 
 @router.get("/", response_model=list[schemas.Payment])
@@ -76,10 +83,24 @@ def record_payment(payload: schemas.PaymentCreate, db: Session = Depends(get_db)
     payment = models.Payment(**payload.model_dump(), next_due_date=ndd)
     db.add(payment)
 
-    # Clear money-aside entries for this bill — the money has now left the account
-    db.query(models.MoneyAside).filter(models.MoneyAside.bill_id == payload.bill_id).delete()
+    if payload.is_part_payment:
+        # Accumulate against prior part payments; only settles once they cover the bill.
+        prior_total = db.query(func.coalesce(func.sum(models.Payment.amount_paid), 0.0)).filter(
+            models.Payment.bill_id == payload.bill_id,
+        ).scalar()
+        total_paid = prior_total + payload.amount_paid
+        fully_paid = total_paid >= bill.estimated_amount - EPSILON
+        next_amount = bill.estimated_amount  # full original amount carries forward
+    else:
+        # A normal payment settles the bill outright, whatever the amount —
+        # and that actual amount becomes the estimate for the next cycle.
+        fully_paid = True
+        next_amount = payload.amount_paid
 
-    _spawn_next(bill, payload.date_paid, db)
+    if fully_paid:
+        # Money set aside for this bill has now been used — clear it.
+        db.query(models.MoneyAside).filter(models.MoneyAside.bill_id == payload.bill_id).delete()
+        _spawn_next(bill, payload.date_paid, db, next_amount)
 
     db.commit()
     db.refresh(payment)

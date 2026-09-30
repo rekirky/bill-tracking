@@ -16,6 +16,13 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE bills ADD COLUMN series_id INTEGER"))
         conn.commit()
 
+# Migrate: add is_part_payment column to payments if it doesn't exist
+with engine.connect() as conn:
+    cols = [row[1] for row in conn.execute(text("PRAGMA table_info(payments)"))]
+    if "is_part_payment" not in cols:
+        conn.execute(text("ALTER TABLE payments ADD COLUMN is_part_payment BOOLEAN NOT NULL DEFAULT 0"))
+        conn.commit()
+
 # Migrate: add wealth_item_id to barefoot_fire_goals if it doesn't exist
 with engine.connect() as conn:
     existing = [row[1] for row in conn.execute(text("PRAGMA table_info(barefoot_fire_goals)"))]

@@ -15,6 +15,7 @@ export const MONTHS = [
 
 export const FREQ_LABELS = {
   once: 'Once',
+  weekly: 'Weekly',
   fortnightly: 'Fortnightly',
   monthly: 'Monthly',
   quarterly: 'Quarterly',

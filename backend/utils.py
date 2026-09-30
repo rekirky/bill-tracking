@@ -7,6 +7,8 @@ def next_due_date(anchor: date, frequency: Frequency) -> date | None:
     """Calculate the next due date from an anchor date based on frequency."""
     if frequency == Frequency.once:
         return None
+    if frequency == Frequency.weekly:
+        return anchor + relativedelta(days=7)
     if frequency == Frequency.fortnightly:
         return anchor + relativedelta(days=14)
     if frequency == Frequency.monthly:

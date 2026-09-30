@@ -259,7 +259,12 @@ export default function BillsByMonth() {
                           <td className="muted" style={{ fontSize: 12 }}>{bill.account_name ?? '—'}</td>
                           <td className="muted">{fmtDate(bill.due_date)}</td>
                           <td><span className="badge badge-muted">{FREQ_LABELS[bill.frequency]}</span></td>
-                          <td className="mono">{fmt(bill.estimated_amount)}</td>
+                          <td className="mono">
+                            {fmt(bill.estimated_amount)}
+                            {!bill.is_paid && bill.amount_paid > 0 && (
+                              <div className="text-muted" style={{ fontSize: 10 }}>{fmt(bill.amount_paid)} paid</div>
+                            )}
+                          </td>
                           <td className="mono text-green">{fmt(bill.total_aside)}</td>
                           <td className={`mono ${bill.is_paid ? 'text-muted' : bill.outstanding > 0 ? 'text-amber' : 'text-green'}`}>
                             {bill.is_paid ? '—' : bill.outstanding > 0 ? fmt(bill.outstanding) : '✓ Covered'}

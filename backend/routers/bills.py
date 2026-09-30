@@ -7,15 +7,29 @@ import models, schemas
 
 router = APIRouter(prefix="/bills", tags=["bills"])
 
+EPSILON = 0.005
+
 
 def _enrich(bill: models.Bill) -> schemas.Bill:
-    """Attach computed total_aside, outstanding, is_paid, and account_name to a bill."""
+    """Attach computed total_aside, outstanding, amount_paid, is_paid, and account_name to a bill."""
     total_aside = sum(m.amount for m in bill.money_aside)
     outstanding = max(bill.estimated_amount - total_aside, 0)
+
+    # A non-part payment always settles the bill outright, whatever the amount.
+    # Part payments accumulate and only settle it once they cover the full amount.
+    full_payment = next((p for p in bill.payments if not p.is_part_payment), None)
+    if full_payment:
+        amount_paid = full_payment.amount_paid
+        is_paid = True
+    else:
+        amount_paid = sum(p.amount_paid for p in bill.payments)
+        is_paid = amount_paid > 0 and amount_paid >= bill.estimated_amount - EPSILON
+
     data = schemas.Bill.model_validate(bill)
     data.total_aside = total_aside
     data.outstanding = outstanding
-    data.is_paid = len(bill.payments) > 0
+    data.amount_paid = round(amount_paid, 2)
+    data.is_paid = is_paid
     data.account_name = bill.account.name if bill.account else None
     return data
 
